@@ -1,0 +1,48 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  background: #111;
+  color: #f5f5f5;
+}
+
+.screen {
+  display: block;
+}
+
+.hidden {
+  display: none;
+}
+
+input, select, button {
+  margin: 8px;
+  padding: 8px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #222;
+  color: #f5f5f5;
+  cursor: pointer;
+}
+
+input:focus, select:focus {
+  outline: 2px solid #ffcc00;
+}
+
+button:hover {
+  background-color: #333;
+}
+
+#card-display, #hand-cards, #hand-rank {
+  font-size: 1.5rem;
+  margin: 16px;
+}
+
+#judge-qr canvas {
+  margin-top: 16px;
+}
+
+h1, h2 {
+  font-weight: normal;
+  margin-bottom: 12px;
+}

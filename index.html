@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Poker Ride</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- Start Screen -->
+    <section id="start-screen" class="screen">
+      <h1>Poker Ride</h1>
+
+      <label for="rider-name">Rider Name:</label>
+      <input id="rider-name" type="text" placeholder="Enter your name" />
+
+      <label for="event-id">Event ID:</label>
+      <input id="event-id" type="text" placeholder="e.g., WP2026" />
+
+      <label for="mode-select">Mode:</label>
+      <select id="mode-select">
+        <option value="5-card">5-card ride</option>
+        <option value="7-card">7-card ride</option>
+      </select>
+
+      <button onclick="startRide()">Start Ride</button>
+    </section>
+
+    <!-- Scan Screen -->
+    <section id="scan-screen" class="screen hidden">
+      <h2>Scan Station QR Code</h2>
+      <div id="qr-reader" style="width: 300px;"></div>
+      <button onclick="showHand()">View My Hand</button>
+      <button onclick="showExport()">Judge QR</button>
+    </section>
+
+    <!-- Card Screen -->
+    <section id="card-screen" class="screen hidden">
+      <h2 id="station-label"></h2>
+      <div id="card-display"></div>
+      <button onclick="goToScan()">Next Station</button>
+      <button onclick="showHand()">View My Hand</button>
+      <button onclick="showExport()">Judge QR</button>
+    </section>
+
+    <!-- Hand Screen -->
+    <section id="hand-screen" class="screen hidden">
+      <h2>Your Hand</h2>
+      <div id="hand-cards"></div>
+      <div id="hand-rank"></div>
+      <button onclick="goToScan()">Back to Scan</button>
+    </section>
+
+    <!-- Export Screen -->
+    <section id="export-screen" class="screen hidden">
+      <h2>Show this QR to the Judge</h2>
+      <div id="judge-qr"></div>
+      <button onclick="goToScan()">Back to Scan</button>
+    </section>
+
+    <!-- Locked Screen -->
+    <section id="locked-screen" class="screen hidden">
+      <h2>Game Locked</h2>
+      <p>This ride is finished. A new game will be available for the next event/day.</p>
+      <button onclick="resetForNewEvent()">Start New Event</button>
+    </section>
+
+  </div>
+
+  <script src="lib/html5-qrcode.min.js"></script>
+  <script src="lib/qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
