@@ -277,9 +277,17 @@
 
       <!-- Scanner panel -->
       <div class="panel">
-        <div class="panel-title">📷 Scan Rider QR Code</div>
+        <div class="panel-title">
+          <span id="camera-dot">⏳</span> Scan Rider QR Code
+        </div>
         <div id="qr-reader"></div>
         <p class="scan-status" id="scan-status">Starting camera…</p>
+        <button id="camera-restart-btn"
+                onclick="restartScanner()"
+                style="display:none;margin-top:10px;width:100%;"
+                class="btn btn-ghost btn-sm">
+          🔄 Restart Camera
+        </button>
         <div class="preview" id="preview">
           <div class="preview-label">Last scanned</div>
           <div class="preview-name"  id="preview-name"></div>
@@ -594,25 +602,75 @@
   /* ---- QR Scanner ---- */
   let lastScan = 0;
 
-  function startScanner() {
-    const statusEl = document.getElementById('scan-status');
+  /* ---- Scanner state ---- */
+  let activeScanner  = null;   // current Html5Qrcode instance
+  let scannerRunning = false;  // true when camera feed is live
 
+  function setCameraStatus(state) {
+    const dot        = document.getElementById('camera-dot');
+    const statusEl   = document.getElementById('scan-status');
+    const restartBtn = document.getElementById('camera-restart-btn');
+    if (state === 'active') {
+      if (dot)        dot.textContent        = '🟢';
+      if (restartBtn) restartBtn.style.display = 'none';
+      if (statusEl)   statusEl.textContent   = "Point camera at a rider's phone screen.";
+    } else if (state === 'starting' || state === 'restarting') {
+      if (dot)        dot.textContent        = '⏳';
+      if (restartBtn) restartBtn.style.display = 'none';
+      if (statusEl)   statusEl.textContent   =
+        state === 'restarting' ? 'Restarting camera…' : 'Starting camera…';
+    } else { // offline / error
+      if (dot)        dot.textContent        = '🔴';
+      if (restartBtn) restartBtn.style.display = 'inline-block';
+      if (statusEl)   statusEl.textContent   =
+        'Camera offline — click 🔄 Restart Camera to reconnect.';
+    }
+  }
+
+  function stopScanner() {
+    return new Promise(function(resolve) {
+      if (activeScanner && scannerRunning) {
+        activeScanner.stop()
+          .then(function()  { cleanup(); resolve(); })
+          .catch(function() { cleanup(); resolve(); });
+      } else {
+        cleanup(); resolve();
+      }
+    });
+    function cleanup() {
+      if (activeScanner) {
+        try { activeScanner.clear(); } catch(e) {}
+        // Clear the DOM element so a fresh instance can mount cleanly
+        const el = document.getElementById('qr-reader');
+        if (el) el.innerHTML = '';
+      }
+      activeScanner  = null;
+      scannerRunning = false;
+    }
+  }
+
+  function startScanner() {
     if (typeof Html5Qrcode === 'undefined') {
-      statusEl.textContent = 'QR library did not load (need internet). Use manual entry.';
+      setCameraStatus('offline');
+      const statusEl = document.getElementById('scan-status');
+      if (statusEl) statusEl.textContent =
+        'QR library did not load (need internet). Use manual entry.';
       return;
     }
 
-    const scanner = new Html5Qrcode('qr-reader', { verbose: false });
+    setCameraStatus('starting');
+
+    activeScanner = new Html5Qrcode('qr-reader', { verbose: false });
     const config  = {
       fps: 10,
-      qrbox: function (w, h) {
+      qrbox: function(w, h) {
         var m = Math.floor(Math.min(w, h) * 0.72);
         return { width: m, height: m };
       },
       aspectRatio: 1.0
     };
 
-    scanner.start(
+    activeScanner.start(
       { facingMode: 'environment' },
       config,
       function onSuccess(text) {
@@ -621,22 +679,48 @@
         lastScan = now;
 
         const result = parseHandQR(text);
+        const statusEl = document.getElementById('scan-status');
         if (!result) {
-          statusEl.textContent = '⚠ Not a Poker Ride QR code — try again.';
+          if (statusEl) statusEl.textContent = '⚠ Not a Poker Ride QR code — try again.';
           return;
         }
-        statusEl.textContent = '✓ Scanned: ' + result.name;
+        if (statusEl) statusEl.textContent = '✓ Scanned: ' + result.name;
         addOrUpdate(result.name, result.cards);
         if (navigator.vibrate) try { navigator.vibrate([50,30,50]); } catch(e) {}
       },
       function onError() { /* per-frame miss — ignore */ }
-    ).then(function () {
-      statusEl.textContent = 'Point camera at a rider\'s phone screen.';
-    }).catch(function (err) {
-      statusEl.textContent = 'Camera blocked or unavailable. Use manual entry.';
+    ).then(function() {
+      scannerRunning = true;
+      setCameraStatus('active');
+    }).catch(function(err) {
+      scannerRunning = false;
+      setCameraStatus('offline');
       console.warn('Scanner error:', err);
     });
   }
+
+  function restartScanner() {
+    setCameraStatus('restarting');
+    stopScanner().then(function() {
+      setTimeout(startScanner, 600); // brief pause lets the camera hardware reset
+    });
+  }
+
+  /* ---- Wake-from-sleep detection ---- */
+  /* The Page Visibility API fires 'visibilitychange' when the laptop
+     screen turns back on after sleep.  We use it to restart the camera
+     automatically so the volunteer doesn't have to do anything. */
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // Laptop going to sleep — stop cleanly to free the camera
+      if (scannerRunning) stopScanner();
+    } else {
+      // Laptop woke up — wait 1.5 s for hardware to stabilise, then restart
+      setTimeout(function() {
+        if (!scannerRunning) restartScanner();
+      }, 1500);
+    }
+  });
 
   /* ---- Helpers ---- */
   let toastTimer;
