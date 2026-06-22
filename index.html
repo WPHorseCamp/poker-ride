@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0b3d2e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Poker Ride" />
+  <title>Poker Ride</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="img/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Optional QR decoder. If lib/jsQR.min.js is present, live camera scanning
+       works on every phone (including iPhone). If it is absent, the app still
+       works using the native scanner (Android) or the manual station buttons. -->
+  <script src="lib/jsQR.min.js" onerror="window.__jsqrMissing=true"></script>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============ START SCREEN ============ -->
+    <section id="screen-start" class="screen active">
+      <div class="brand">
+        <div class="brand-suit">&#9824;&#9829;&#9827;&#9830;</div>
+        <h1>Poker Ride</h1>
+        <p class="tagline">Scan a station. Draw a card. Best hand at the finish wins.</p>
+      </div>
+      <form id="start-form" class="card-panel" autocomplete="off">
+        <label for="rider-name">Rider name</label>
+        <input id="rider-name" name="rider-name" type="text" inputmode="text"
+               placeholder="e.g. Linda" maxlength="24" required />
+        <button type="submit" class="btn btn-primary">Start Ride</button>
+      </form>
+      <button id="resume-btn" class="btn btn-ghost hidden">Resume current ride</button>
+      <p class="fineprint">Works offline. Add to your Home Screen for the best experience.</p>
+    </section>
+
+    <!-- ============ SCAN SCREEN ============ -->
+    <section id="screen-scan" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" data-nav="start" aria-label="Back">&#8592;</button>
+        <span class="topbar-title">Scan station</span>
+        <button class="icon-btn" data-nav="hand" aria-label="View hand">&#9824;</button>
+      </header>
+
+      <div class="scan-wrap">
+        <video id="scan-video" playsinline muted></video>
+        <div id="qr-reader" class="hidden"></div>
+        <div class="scan-frame"></div>
+        <canvas id="scan-canvas" class="hidden"></canvas>
+      </div>
+
+      <p id="scan-status" class="scan-status">Point your camera at the station QR code.</p>
+
+      <div class="manual-block">
+        <p class="manual-label">No camera? Tap your station:</p>
+        <div id="manual-stations" class="manual-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ CARD DISPLAY SCREEN ============ -->
+    <section id="screen-card" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" data-nav="scan" aria-label="Back to scan">&#8592;</button>
+        <span class="topbar-title" id="card-station-title">Station</span>
+        <button class="icon-btn" data-nav="hand" aria-label="View hand">&#9824;</button>
+      </header>
+
+      <div class="card-stage">
+        <div id="playing-card" class="playing-card">
+          <span class="pc-rank pc-top"></span>
+          <span class="pc-suit-big"></span>
+          <span class="pc-rank pc-bottom"></span>
+        </div>
+        <p id="card-caption" class="card-caption"></p>
+        <p id="card-progress" class="card-progress"></p>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" data-nav="scan">Next Station</button>
+        <button class="btn btn-ghost" data-nav="hand">View My Hand</button>
+      </div>
+    </section>
+
+    <!-- ============ FINAL HAND SCREEN ============ -->
+    <section id="screen-hand" class="screen">
+      <header class="topbar">
+        <button class="icon-btn" data-nav="scan" aria-label="Back to scan">&#8592;</button>
+        <span class="topbar-title">My Hand</span>
+        <span class="icon-btn" aria-hidden="true"></span>
+      </header>
+
+      <div class="hand-stage">
+        <p id="hand-rider" class="hand-rider"></p>
+        <div id="hand-cards" class="hand-cards"></div>
+        <div id="hand-rank" class="hand-rank"></div>
+        <p id="hand-progress" class="hand-progress"></p>
+        <p id="hand-restarts" class="hand-restarts"></p>
+
+        <!-- Finish-line QR code — visible only when all 5 stations are complete -->
+        <div id="hand-qr-section" class="hand-qr-section hidden">
+          <p class="qr-label">📱 Show this QR code at the finish line</p>
+          <div id="hand-qr"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" data-nav="scan">Back to Scanning</button>
+        <button id="restart-btn" class="btn btn-danger">Restart Ride</button>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- QR-code GENERATOR — download qrcode.min.js and place in lib/
+       Get it from: https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js -->
+  <script src="lib/qrcode.min.js" onerror="window.__qrcodeMissing=true"></script>
+  <script src="app.js"></script>
+</body>
+</html>
