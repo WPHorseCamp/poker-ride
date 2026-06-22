@@ -286,18 +286,64 @@
     var status = document.getElementById("scan-status");
     refreshManual();
     var done = drawnCount() === STATIONS.length;
-    if (done) status.textContent = "All 5 stations done! Tap ♠ to view your hand.";
+
+    if (done) {
+      status.textContent = "All 5 stations done! Tap ♠ to view your hand.";
+      showCameraOverlay(false);
+      setManualVisible(true);
+      return;
+    }
 
     engine = pickEngine();
+
+    if (engine === "none") {
+      status.textContent = "Live scanning not supported by this browser. Tap your station below.";
+      showCameraOverlay(false);
+      setManualVisible(true);
+      return;
+    }
+
+    // Show a "Tap to Start Camera" button rather than auto-starting.
+    // On older iPhones (6s / iOS 12-15) the OS will NOT show a camera
+    // permission dialog unless the camera request comes directly from a
+    // user tap.  Auto-starting silently fails and drops to the manual
+    // buttons with no explanation.  The overlay button gives iOS the
+    // user-gesture it needs to pop the permission prompt.
+    showCameraOverlay(true);
+    setManualVisible(false);
+    status.textContent = "Tap the button above to open your camera.";
+  }
+
+  function showCameraOverlay(visible) {
+    var overlay = document.getElementById("camera-start-overlay");
+    if (overlay) overlay.classList.toggle("hidden", !visible);
+    // keep scan frame hidden until camera actually starts
     var frame = document.querySelector(".scan-frame");
+    if (frame) frame.classList.toggle("hidden", visible);
+  }
+
+  function startCameraFeed() {
+    showCameraOverlay(false);
+    var status  = document.getElementById("scan-status");
+    var retryBtn = document.getElementById("camera-retry-btn");
+    if (retryBtn) retryBtn.classList.add("hidden");
+
+    var done   = drawnCount() === STATIONS.length;
+    var frame  = document.querySelector(".scan-frame");
     var reader = document.getElementById("qr-reader");
 
-    /* ---- html5-qrcode: it owns its own camera + <video> element ---- */
+    function onCameraFail(msg) {
+      status.innerHTML = msg;
+      setManualVisible(true);
+      if (retryBtn) retryBtn.classList.remove("hidden");
+    }
+
+    /* ---- html5-qrcode path ---- */
     if (engine === "html5qrcode") {
       video.classList.add("hidden");
       if (frame) frame.classList.add("hidden");
       reader.classList.remove("hidden");
-      setManualVisible(false);                 // assume camera works; reveal on failure
+      setManualVisible(false);
       if (!done) status.textContent = "Starting camera…";
       var Lib = getH5Lib();
       try { h5 = new Lib("qr-reader", { verbose: false }); }
@@ -314,29 +360,26 @@
         h5running = true;
         if (!done) status.textContent = "Point your camera at the station QR code.";
       }).catch(function () {
-        status.textContent = "Camera blocked. Allow camera access, or tap your station below.";
-        setManualVisible(true);                // camera unusable — restore fallback
+        onCameraFail(
+          "Camera access was blocked.<br>" +
+          "<small>iPhone: Settings → Safari → Camera → Allow<br>" +
+          "Then tap <strong>Try Camera Again</strong> below.</small>"
+        );
         cleanupH5();
       });
       return;
     }
 
-    /* ---- jsQR / BarcodeDetector: we drive getUserMedia ourselves ---- */
+    /* ---- jsQR / BarcodeDetector path ---- */
     video.classList.remove("hidden");
     if (frame) frame.classList.remove("hidden");
     reader.classList.add("hidden");
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      status.textContent = "Camera not available here. Use the station buttons below.";
-      setManualVisible(true);
+      onCameraFail("Camera not available on this device. Tap your station below.");
       return;
     }
-    if (engine === "none") {
-      status.textContent = "Live scanning isn't supported by this browser. Tap your station below.";
-      setManualVisible(true);
-      return;
-    }
-    setManualVisible(false);                    // assume camera works; reveal on failure
+    setManualVisible(false);
     if (!done) status.textContent = "Starting camera…";
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" } }, audio: false
@@ -353,8 +396,10 @@
       }
       tick();
     }).catch(function () {
-      status.textContent = "Camera blocked. Allow camera access, or tap your station below.";
-      setManualVisible(true);
+      onCameraFail(
+        "Camera access was blocked.<br>" +
+        "<small>Go to Settings and allow camera access, then tap <strong>Try Camera Again</strong> below.</small>"
+      );
     });
   }
 
@@ -539,6 +584,12 @@
       show("start");
       toast("Ride reset (restart #" + info.count + " today).");
     });
+
+    // Camera start overlay button + retry button
+    var camBtn   = document.getElementById("camera-start-btn");
+    var retryBtn = document.getElementById("camera-retry-btn");
+    if (camBtn)   camBtn.addEventListener("click",   function () { startCameraFeed(); });
+    if (retryBtn) retryBtn.addEventListener("click", function () { startCameraFeed(); });
 
     // nav buttons
     document.querySelectorAll("[data-nav]").forEach(function (el) {

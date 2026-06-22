@@ -45,13 +45,24 @@
       </header>
 
       <div class="scan-wrap">
+        <!-- Tap-to-start overlay — visible first; hidden once camera is running.
+             Giving iOS a real tap event is required for the camera permission
+             dialog to appear on older iPhones (6s / iOS 12-15). -->
+        <div id="camera-start-overlay" class="camera-start-overlay">
+          <button id="camera-start-btn" type="button" class="camera-start-btn">
+            📷<br>Tap to Start Camera
+          </button>
+        </div>
         <video id="scan-video" playsinline muted></video>
         <div id="qr-reader" class="hidden"></div>
-        <div class="scan-frame"></div>
+        <div class="scan-frame hidden"></div>
         <canvas id="scan-canvas" class="hidden"></canvas>
       </div>
 
       <p id="scan-status" class="scan-status">Point your camera at the station QR code.</p>
+      <button id="camera-retry-btn" class="btn btn-ghost hidden" style="margin:0 0 6px;">
+        📷 Try Camera Again
+      </button>
 
       <div class="manual-block">
         <p class="manual-label">No camera? Tap your station:</p>
