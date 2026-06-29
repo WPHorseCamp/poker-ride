@@ -153,11 +153,13 @@ input[type=text]:focus{outline:3px solid var(--gold);}
   font-size:13px;color:var(--gold);text-align:center;
   margin:0;letter-spacing:.5px;font-weight:600;
 }
-#hand-qr{
+/* class selector covers multi-player dynamic divs; #hand-qr kept for legacy */
+#hand-qr, .hand-qr{
   background:var(--cream);padding:10px;border-radius:14px;
   box-shadow:var(--shadow);display:inline-block;
 }
-#hand-qr canvas,#hand-qr img{display:block;}
+#hand-qr canvas, #hand-qr img,
+.hand-qr canvas, .hand-qr img { display:block; }
 .qr-fallback{
   color:var(--cream);font-size:12px;text-align:center;word-break:break-all;
   background:rgba(255,255,255,.06);border:1px solid rgba(232,198,106,.35);
