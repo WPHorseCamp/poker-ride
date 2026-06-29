@@ -27,9 +27,10 @@
         <p class="tagline">Scan a station. Draw a card. Best hand at the finish wins.</p>
       </div>
       <form id="start-form" class="card-panel" autocomplete="off">
-        <label for="rider-name">Rider name</label>
-        <input id="rider-name" name="rider-name" type="text" inputmode="text"
-               placeholder="e.g. Linda" maxlength="24" required />
+        <div id="name-inputs-container"></div>
+        <button type="button" id="add-hand-btn" class="btn btn-ghost add-hand-btn">
+          ＋ ADD HAND
+        </button>
         <button type="submit" class="btn btn-primary">Start Ride</button>
       </form>
       <button id="resume-btn" class="btn btn-ghost hidden">Resume current ride</button>
@@ -40,9 +41,12 @@
     <section id="screen-scan" class="screen">
       <header class="topbar">
         <button class="icon-btn" data-nav="start" aria-label="Back">&#8592;</button>
-        <span class="topbar-title">Scan station</span>
+        <span class="topbar-title" id="scan-topbar-title">Scan station</span>
         <button class="icon-btn" data-nav="hand" aria-label="View hand">&#9824;</button>
       </header>
+
+      <!-- Player tabs — hidden for single player, visible for multi -->
+      <div id="player-tabs" class="player-tabs hidden"></div>
 
       <div class="scan-wrap">
         <!-- Tap-to-start overlay — visible first; hidden once camera is running.
@@ -102,18 +106,8 @@
         <span class="icon-btn" aria-hidden="true"></span>
       </header>
 
-      <div class="hand-stage">
-        <p id="hand-rider" class="hand-rider"></p>
-        <div id="hand-cards" class="hand-cards"></div>
-        <div id="hand-rank" class="hand-rank"></div>
-        <p id="hand-progress" class="hand-progress"></p>
-        <p id="hand-restarts" class="hand-restarts"></p>
-
-        <!-- Finish-line QR code — visible only when all 5 stations are complete -->
-        <div id="hand-qr-section" class="hand-qr-section hidden">
-          <p class="qr-label">📱 Show this QR code at the finish line</p>
-          <div id="hand-qr"></div>
-        </div>
+      <div class="hand-stage" id="hand-stage">
+        <!-- populated dynamically by renderHand() for each player -->
       </div>
 
       <div class="actions">
