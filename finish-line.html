@@ -15,278 +15,207 @@
       --danger: #8c2b25;
       --shadow: 0 4px 20px rgba(0,0,0,.35);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing:border-box; margin:0; padding:0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: radial-gradient(120% 120% at 50% 0%, var(--felt-2), var(--felt) 60%, #072518 100%);
-      background-attachment: fixed;
-      color: var(--cream);
-      min-height: 100vh;
-      padding: 24px 28px 40px;
-      -webkit-font-smoothing: antialiased;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      background:radial-gradient(120% 120% at 50% 0%,var(--felt-2),var(--felt) 60%,#072518 100%);
+      background-attachment:fixed;
+      color:var(--cream);
+      min-height:100vh;
+      padding:20px 24px 40px;
+      -webkit-font-smoothing:antialiased;
     }
 
     /* ---- Header ---- */
-    .page-header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-    .page-header .suits {
-      font-size: 22px;
-      letter-spacing: 6px;
-      color: var(--gold);
-      display: block;
-      margin-bottom: 6px;
-    }
-    .page-header h1 {
-      font-size: 30px;
-      color: var(--cream);
-      font-weight: 800;
-      letter-spacing: .5px;
-    }
-    .page-header p {
-      font-size: 14px;
-      color: #a9c2b5;
-      margin-top: 4px;
-    }
+    .page-header { text-align:center; margin-bottom:22px; }
+    .page-header .suits { font-size:22px; letter-spacing:6px; color:var(--gold); display:block; margin-bottom:5px; }
+    .page-header h1 { font-size:28px; color:var(--cream); font-weight:800; letter-spacing:.5px; }
+    .page-header p  { font-size:13px; color:#a9c2b5; margin-top:4px; }
+    #offline-status { font-size:12px; margin-top:6px; color:#a9c2b5; }
 
     /* ---- Layout ---- */
     .layout {
-      max-width: 1280px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 24px;
-      align-items: start;
+      max-width:1300px; margin:0 auto;
+      display:grid; grid-template-columns:340px 1fr; gap:22px; align-items:start;
     }
-    @media (max-width: 820px) {
-      .layout { grid-template-columns: 1fr; }
-    }
+    @media(max-width:820px){ .layout{ grid-template-columns:1fr; } }
 
     /* ---- Panel ---- */
     .panel {
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(232,198,106,.3);
-      border-radius: 18px;
-      padding: 22px;
-      box-shadow: var(--shadow);
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(232,198,106,.3);
+      border-radius:18px; padding:20px; box-shadow:var(--shadow);
     }
-    .panel + .panel { margin-top: 18px; }
+    .panel+.panel { margin-top:16px; }
     .panel-title {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: var(--gold);
-      margin-bottom: 16px;
+      font-size:13px; font-weight:700; text-transform:uppercase;
+      letter-spacing:1.2px; color:var(--gold); margin-bottom:14px;
     }
 
     /* ---- Scanner ---- */
-    #qr-reader { border-radius: 12px; overflow: hidden; background: #000; }
-    #qr-reader video { display: block; width: 100% !important; }
-    /* hide html5-qrcode library chrome */
+    #qr-reader { border-radius:12px; overflow:hidden; background:#000; }
+    #qr-reader video { display:block; width:100%!important; }
     #qr-reader img[alt="Info icon"],
-    #qr-reader > div > span,
-    #qr-reader > div > div > span { display: none !important; }
+    #qr-reader>div>span,
+    #qr-reader>div>div>span { display:none!important; }
 
-    .scan-status {
-      text-align: center;
-      font-size: 14px;
-      color: #cfe0d6;
-      margin-top: 12px;
-      min-height: 22px;
-    }
+    .scan-status { text-align:center; font-size:14px; color:#cfe0d6; margin-top:10px; min-height:20px; }
 
-    /* Preview card (last scanned rider) */
-    .preview {
-      display: none;
-      background: rgba(232,198,106,.1);
-      border: 1px solid rgba(232,198,106,.5);
-      border-radius: 14px;
-      padding: 16px;
-      margin-top: 14px;
-      text-align: center;
-    }
-    .preview.show { display: block; }
-    .preview-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); }
-    .preview-name  { font-size: 20px; font-weight: 800; margin: 4px 0 2px; }
-    .preview-cards { font-size: 15px; font-family: monospace; letter-spacing: 1px; }
-    .preview-rank  { font-size: 18px; font-weight: 700; color: var(--gold); margin-top: 4px; }
+    /* Preview */
+    .preview { display:none; background:rgba(232,198,106,.1); border:1px solid rgba(232,198,106,.5);
+      border-radius:12px; padding:14px; margin-top:12px; text-align:center; }
+    .preview.show { display:block; }
+    .preview-label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--gold); }
+    .preview-name  { font-size:19px; font-weight:800; margin:4px 0 2px; }
+    .preview-cards { font-size:14px; font-family:monospace; letter-spacing:1px; }
+    .preview-rank  { font-size:17px; font-weight:700; color:var(--gold); margin-top:4px; }
 
     /* ---- Manual entry ---- */
     .field-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--gold);
-      display: block;
-      margin-bottom: 5px;
+      font-size:11px; text-transform:uppercase; letter-spacing:1px;
+      color:var(--gold); display:block; margin-bottom:4px;
     }
-    .field-hint {
-      font-size: 12px;
-      color: #a9c2b5;
-      margin-bottom: 12px;
-      line-height: 1.5;
+    .field-hint { font-size:12px; color:#a9c2b5; margin-bottom:10px; line-height:1.5; }
+    input[type=text], input[type=text] {
+      width:100%; padding:10px 12px; border-radius:8px; border:none;
+      font-size:15px; background:var(--cream); color:var(--ink); margin-bottom:8px;
     }
-    input[type=text] {
-      width: 100%;
-      padding: 11px 14px;
-      border-radius: 10px;
-      border: none;
-      font-size: 15px;
-      background: var(--cream);
-      color: var(--ink);
-      margin-bottom: 10px;
-    }
-    input[type=text]:focus { outline: 3px solid var(--gold); }
+    input[type=text]:focus { outline:2px solid var(--gold); }
 
     /* ---- Buttons ---- */
     .btn {
-      border: none;
-      border-radius: 10px;
-      padding: 12px 18px;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: filter .15s;
+      border:none; border-radius:10px; padding:11px 16px;
+      font-size:15px; font-weight:600; cursor:pointer;
+      width:100%; margin-bottom:8px; transition:filter .1s;
     }
-    .btn:hover  { filter: brightness(1.1); }
-    .btn:active { filter: brightness(.95); }
-    .btn-primary { background: linear-gradient(180deg, var(--gold), #d2a94a); color: #3a2c05; width: 100%; }
-    .btn-ghost   { background: rgba(255,255,255,.08); color: var(--cream); border: 1px solid rgba(255,255,255,.2); }
-    .btn-danger  { background: var(--danger); color: #fff; }
-    .btn-sm      { padding: 9px 16px; font-size: 13px; font-weight: 600; }
+    .btn:hover  { filter:brightness(1.08); }
+    .btn:active { filter:brightness(.93); }
+    .btn-primary { background:linear-gradient(180deg,var(--gold),#d2a94a); color:#3a2c05; }
+    .btn-ghost   { background:rgba(255,255,255,.08); color:var(--cream); border:1px solid rgba(255,255,255,.2); }
+    .btn-danger  { background:var(--danger); color:#fff; }
+    .btn-sm      { padding:8px 14px; font-size:13px; font-weight:600; width:auto; margin-bottom:0; }
+
+    /* EXECUTE DRAW — the big drama button */
+    .btn-draw {
+      display:none;
+      width:100%;
+      background:linear-gradient(135deg,#c2362f,#8c2b25);
+      color:#fff;
+      border:none;
+      border-radius:14px;
+      padding:18px 20px;
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:.5px;
+      cursor:pointer;
+      box-shadow:0 4px 20px rgba(194,54,47,.5);
+      margin-bottom:14px;
+      transition:filter .1s, transform .1s;
+      text-align:center;
+      line-height:1.3;
+    }
+    .btn-draw:hover  { filter:brightness(1.1); }
+    .btn-draw:active { transform:scale(.98); }
+    .btn-draw.visible { display:block; }
+
+    .draw-deck-status {
+      text-align:center; font-size:12px; color:#a9c2b5;
+      margin-bottom:12px; display:none;
+    }
+    .draw-deck-status.visible { display:block; }
 
     /* ---- Leaderboard ---- */
-    .lb-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 18px;
-    }
-    .lb-header .panel-title { margin-bottom: 0; }
-    .lb-count { font-size: 13px; color: #a9c2b5; }
-    .lb-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .lb-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .lb-header .panel-title { margin-bottom:0; }
+    .lb-count { font-size:13px; color:#a9c2b5; }
+    .lb-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
 
-    .empty-state {
-      text-align: center;
-      padding: 50px 20px;
-      color: #7f998c;
-    }
-    .empty-state .icon { font-size: 48px; margin-bottom: 14px; }
-    .empty-state p    { font-size: 15px; }
+    .empty-state { text-align:center; padding:46px 20px; color:#7f998c; }
+    .empty-state .icon { font-size:44px; margin-bottom:12px; }
+    .empty-state p    { font-size:15px; }
 
-    table { width: 100%; border-collapse: collapse; }
-    thead tr { border-bottom: 2px solid rgba(232,198,106,.35); }
-    th {
-      text-align: left;
-      padding: 8px 12px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .8px;
-      color: var(--gold);
-      font-weight: 700;
-    }
-    td {
-      padding: 12px 12px;
-      font-size: 14px;
-      border-bottom: 1px solid rgba(255,255,255,.07);
-      vertical-align: middle;
-    }
-    tbody tr:hover { background: rgba(255,255,255,.04); }
+    table { width:100%; border-collapse:collapse; }
+    thead tr { border-bottom:2px solid rgba(232,198,106,.35); }
+    th { text-align:left; padding:8px 10px; font-size:11px; text-transform:uppercase;
+      letter-spacing:.8px; color:var(--gold); font-weight:700; }
+    td { padding:10px 10px; font-size:14px; border-bottom:1px solid rgba(255,255,255,.07);
+      vertical-align:middle; }
+    tbody tr:hover { background:rgba(255,255,255,.04); }
 
-    /* Winner row */
-    tr.rank-1 { background: rgba(232,198,106,.1); }
-    tr.rank-1 td { color: var(--gold); }
-    tr.rank-1 .td-name { color: var(--cream); }
+    tr.rank-1 { background:rgba(232,198,106,.1); }
+    tr.rank-1 td { color:var(--gold); }
+    tr.rank-1 .td-name { color:var(--cream); }
 
-    .td-place {
-      font-size: 18px;
-      font-weight: 800;
-      width: 40px;
-      color: #7f998c;
+    .td-place { font-size:17px; font-weight:800; width:36px; color:#7f998c; }
+    tr.rank-1 .td-place { color:var(--gold); }
+    tr.rank-2 .td-place, tr.rank-3 .td-place { color:#c0c0c0; }
+
+    .td-name    { font-weight:700; font-size:15px; color:var(--cream); }
+    .td-hand    { font-size:13px; color:#a9c2b5; }
+    tr.rank-1 .td-hand { color:rgba(232,198,106,.7); }
+    .td-cards   { font-family:monospace; font-size:14px; letter-spacing:.3px; white-space:nowrap; }
+    .suit-red   { color:var(--red); }
+    .card-discard { color:#777; text-decoration:line-through; cursor:pointer; font-size:13px; }
+    .card-normal  { cursor:pointer; }
+
+    .pending-label {
+      font-size:11px; color:var(--gold); font-weight:700;
+      background:rgba(232,198,106,.12); border-radius:4px;
+      padding:2px 6px; margin-left:6px; white-space:nowrap;
     }
-    tr.rank-1 .td-place { color: var(--gold); }
-    tr.rank-2 .td-place, tr.rank-3 .td-place { color: #c0c0c0; }
-
-    .td-name    { font-weight: 700; font-size: 16px; color: var(--cream); }
-    .td-hand    { font-size: 13px; color: #a9c2b5; }
-    tr.rank-1 .td-hand { color: rgba(232,198,106,.7); }
-    .td-cards   { font-family: monospace; font-size: 14px; letter-spacing: .5px; white-space: nowrap; }
-    .suit-red   { color: var(--red); }
+    .drawn-label {
+      font-size:11px; color:#6fcf97; font-weight:700;
+      background:rgba(111,207,151,.12); border-radius:4px;
+      padding:2px 6px; margin-left:6px;
+    }
 
     .remove-btn {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,.25);
-      cursor: pointer;
-      font-size: 18px;
-      padding: 4px 6px;
-      border-radius: 6px;
-      line-height: 1;
+      background:none; border:none; color:rgba(255,255,255,.25);
+      cursor:pointer; font-size:16px; padding:4px 6px; border-radius:4px;
     }
-    .remove-btn:hover { color: var(--red); background: rgba(200,50,50,.15); }
+    .remove-btn:hover { color:var(--red); }
 
-    /* ---- Toast ---- */
-    #toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1c1c1c;
-      color: #fff;
-      padding: 12px 22px;
-      border-radius: 12px;
-      font-size: 14px;
-      box-shadow: 0 6px 24px rgba(0,0,0,.5);
-      z-index: 100;
-      border: 1px solid rgba(232,198,106,.35);
-      display: none;
-      white-space: nowrap;
-    }
-
-    /* ---- Tie message ---- */
+    /* Tie notice */
     .tie-notice {
-      background: rgba(232,198,106,.12);
-      border: 1px solid rgba(232,198,106,.4);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 13px;
-      color: var(--gold);
-      margin-top: 14px;
-      display: none;
+      background:rgba(232,198,106,.12); border:1px solid rgba(232,198,106,.4);
+      border-radius:10px; padding:10px 14px; font-size:13px; color:var(--gold);
+      margin-top:12px; display:none;
     }
-    .tie-notice.show { display: block; }
+    .tie-notice.show { display:block; }
+
+    /* Toast */
+    #toast {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      background:#1c1c1c; color:#fff; padding:12px 22px; border-radius:12px;
+      font-size:14px; box-shadow:0 6px 24px rgba(0,0,0,.5); z-index:100;
+      border:1px solid rgba(232,198,106,.35); display:none; white-space:nowrap;
+    }
   </style>
 </head>
 <body>
 
   <div class="page-header">
-    <span class="suits">♠ ♥ ♦ ♣</span>
-    <h1>Poker Ride — Finish Line</h1>
-    <p>Scan each rider's QR code as they arrive &nbsp;·&nbsp; Results rank automatically</p>
-    <p id="offline-status" style="font-size:12px;margin-top:6px;color:#a9c2b5;">
-      ⏳ Checking offline status…
-    </p>
+    <span class="suits">&#9824; &#9829; &#9826; &#9827;</span>
+    <h1>Poker Ride &#8212; Finish Line</h1>
+    <p>Scan each rider&#39;s QR code &nbsp;&middot;&nbsp; Results rank automatically &nbsp;&middot;&nbsp; Execute draw for drama</p>
+    <div id="offline-status">&#8987; Checking offline status&hellip;</div>
   </div>
 
   <div class="layout">
 
-    <!-- ===== LEFT COLUMN: Scanner + Manual ===== -->
+    <!-- ===== LEFT: Scanner + Manual ===== -->
     <div>
 
-      <!-- Scanner panel -->
+      <!-- Scanner -->
       <div class="panel">
         <div class="panel-title">
-          <span id="camera-dot">⏳</span> Scan Rider QR Code
+          <span id="camera-dot">&#9203;</span> Scan Rider QR Code
         </div>
         <div id="qr-reader"></div>
-        <p class="scan-status" id="scan-status">Starting camera…</p>
-        <button id="camera-restart-btn"
-                onclick="restartScanner()"
-                style="display:none;margin-top:10px;width:100%;"
-                class="btn btn-ghost btn-sm">
-          🔄 Restart Camera
+        <p class="scan-status" id="scan-status">Starting camera&hellip;</p>
+        <button id="camera-restart-btn" onclick="restartScanner()"
+                style="display:none;margin-top:10px;width:100%;" class="btn btn-ghost btn-sm">
+          &#128260; Restart Camera
         </button>
         <div class="preview" id="preview">
           <div class="preview-label">Last scanned</div>
@@ -296,488 +225,521 @@
         </div>
       </div>
 
-      <!-- Manual entry panel -->
+      <!-- Manual entry -->
       <div class="panel">
-        <div class="panel-title">✏️ Manual Entry</div>
+        <div class="panel-title">&#9998; Manual Entry</div>
         <p class="field-hint">
-          Use if a rider's QR code won't scan.<br>
-          Cards format: <strong>AS KH QD JC 10S</strong><br>
-          (Rank + suit letter: S = Spades, H = Hearts, D = Diamonds, C = Clubs)
+          Use if QR scanning fails.<br>
+          Cards: <strong>AS KH QD JC 10S</strong> (rank + S H D C)<br>
+          Discards: add <strong>|1,0,0,1,0</strong> after cards (1=discard)
         </p>
         <label class="field-label" for="m-name">Rider Name</label>
-        <input id="m-name"  type="text" placeholder="e.g. Linda" maxlength="24" />
-        <label class="field-label" for="m-cards">Five Cards</label>
-        <input id="m-cards" type="text" placeholder="AS KH QD JC 10S" maxlength="35"
+        <input id="m-name" type="text" placeholder="e.g. Linda" maxlength="24" />
+        <label class="field-label" for="m-cards">Five (or Seven) Cards</label>
+        <input id="m-cards" type="text" placeholder="AS KH QD JC 10S" maxlength="50"
                onkeydown="if(event.key==='Enter') submitManual()" />
         <button class="btn btn-primary" onclick="submitManual()">Add to Leaderboard</button>
       </div>
 
     </div><!-- end left column -->
 
-    <!-- ===== RIGHT COLUMN: Leaderboard ===== -->
-    <div class="panel">
-      <div class="lb-header">
-        <div class="panel-title">🏆 Live Leaderboard</div>
-        <span class="lb-count" id="lb-count">0 riders</span>
-      </div>
+    <!-- ===== RIGHT: Draw button + Leaderboard ===== -->
+    <div>
 
-      <div id="lb-body">
-        <div class="empty-state">
-          <div class="icon">🃏</div>
-          <p>No riders yet.<br>Scan QR codes as contestants arrive at the finish line.</p>
+      <!-- EXECUTE DRAW — the big drama button -->
+      <button id="execute-draw-btn" class="btn-draw" onclick="executeDraw()">
+        &#127920; EXECUTE DRAW<br>
+        <span id="draw-btn-sub" style="font-size:14px;font-weight:600;opacity:.85;"></span>
+      </button>
+      <div class="draw-deck-status" id="draw-deck-status"></div>
+
+      <!-- Leaderboard -->
+      <div class="panel">
+        <div class="lb-header">
+          <div class="panel-title">&#127942; Live Leaderboard</div>
+          <span class="lb-count" id="lb-count">0 riders</span>
+        </div>
+        <div id="lb-body">
+          <div class="empty-state">
+            <div class="icon">&#127921;</div>
+            <p>No riders yet.<br>Scan QR codes as contestants arrive.</p>
+          </div>
+        </div>
+        <div class="tie-notice" id="tie-notice"></div>
+        <div class="lb-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">&#128229; Export CSV</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAll()">&#128465; Clear All</button>
         </div>
       </div>
 
-      <div class="tie-notice" id="tie-notice"></div>
-
-      <div class="lb-actions">
-        <button class="btn btn-ghost btn-sm" onclick="exportCSV()">📥 Export to CSV</button>
-        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 Clear All</button>
-      </div>
-    </div>
+    </div><!-- end right column -->
 
   </div><!-- end layout -->
 
   <div id="toast"></div>
 
-  <!-- html5-qrcode — loaded from the same lib/ folder as the rider app (no internet needed) -->
+  <!-- lib/jsQR.min.js is the html5-qrcode library bundled with the project -->
   <script src="lib/jsQR.min.js"></script>
   <script>
   /* ================================================================
-     POKER RIDE — FINISH LINE COMPANION APP
-     Scans rider QR codes, ranks hands, exports CSV.
-     QR payload format produced by the rider app:
-       PR1|{RiderName}|{card1},{card2},{card3},{card4},{card5}
-       e.g.  PR1|Linda|AS,KH,QD,JC,10S
+     POKER RIDE — FINISH LINE  v2.0
+     Now with Draw Poker: mark discards, execute draw for leaderboard drama
   ================================================================ */
 
   /* ---- Card utilities ---- */
-  const GLYPH = { S: '♠', H: '♥', D: '♦', C: '♣' };
-  const RED   = { H: true, D: true, S: false, C: false };
+  const GLYPH = { S:'\u2660', H:'\u2665', D:'\u2666', C:'\u2663' };
+  const RED   = { H:true, D:true, S:false, C:false };
   const VALID_RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
   const VALID_SUITS = ['S','H','D','C'];
 
-  function rankVal(r) {
-    return ({ J:11, Q:12, K:13, A:14 })[r] || parseInt(r, 10);
+  function rankVal(r) { return ({J:11,Q:12,K:13,A:14})[r]||parseInt(r,10); }
+
+  function scoreHand5(cards) {
+    if (!cards||cards.length<5) return [0];
+    const vals  = cards.map(c=>rankVal(c.r)).sort((a,b)=>a-b);
+    const suits = cards.map(c=>c.s);
+    const counts={};
+    vals.forEach(v=>{counts[v]=(counts[v]||0)+1;});
+    const groups=Object.entries(counts).map(([v,c])=>({val:+v,cnt:c})).sort((a,b)=>b.cnt-a.cnt||b.val-a.val);
+    const isFlush=suits.every(s=>s===suits[0]);
+    const uniq=[...new Set(vals)].sort((a,b)=>a-b);
+    let isStraight=false,straightHigh=vals[4];
+    if (uniq.length===5) {
+      if (uniq[4]-uniq[0]===4){isStraight=true;straightHigh=uniq[4];}
+      if (uniq[0]===2&&uniq[1]===3&&uniq[2]===4&&uniq[3]===5&&uniq[4]===14){isStraight=true;straightHigh=5;}
+    }
+    const hi=[...vals].reverse();
+    if (isStraight&&isFlush) return [8,straightHigh];
+    if (groups[0].cnt===4)   return [7,groups[0].val,groups[1]?groups[1].val:0];
+    if (groups[0].cnt===3&&groups[1]?.cnt===2) return [6,groups[0].val,groups[1].val];
+    if (isFlush)    return [5,...hi];
+    if (isStraight) return [4,straightHigh];
+    if (groups[0].cnt===3) return [3,groups[0].val,groups[1]?.val||0,groups[2]?.val||0];
+    if (groups[0].cnt===2&&groups[1]?.cnt===2){
+      const p1=Math.max(groups[0].val,groups[1].val),p2=Math.min(groups[0].val,groups[1].val);
+      return [2,p1,p2,groups[2]?.val||0];
+    }
+    if (groups[0].cnt===2){
+      const kickers=groups.slice(1).map(g=>g.val).sort((a,b)=>b-a);
+      return [1,groups[0].val,...kickers];
+    }
+    return [0,...hi];
   }
 
-  /* Returns an array of integers; compare lexicographically — higher = better. */
-  function scoreHand(cards) {
-    if (!cards || cards.length < 5) return [0, 0];
-
-    const vals  = cards.map(c => rankVal(c.r)).sort((a, b) => a - b);
-    const suits = cards.map(c => c.s);
-
-    const counts = {};
-    vals.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
-
-    const groups = Object.entries(counts)
-      .map(([v, c]) => ({ val: Number(v), cnt: c }))
-      .sort((a, b) => b.cnt - a.cnt || b.val - a.val);
-
-    const isFlush = suits.every(s => s === suits[0]);
-
-    const uniq = [...new Set(vals)].sort((a, b) => a - b);
-    let isStraight = false;
-    let straightHigh = vals[vals.length - 1];
-
-    if (uniq.length === 5) {
-      if (uniq[4] - uniq[0] === 4) { isStraight = true; straightHigh = uniq[4]; }
-      // Wheel (A-2-3-4-5)
-      if (uniq[0]===2 && uniq[1]===3 && uniq[2]===4 && uniq[3]===5 && uniq[4]===14) {
-        isStraight = true; straightHigh = 5;
-      }
-    }
-
-    const hi = [...vals].reverse(); // high-to-low for flush / high-card tiebreakers
-
-    if (isStraight && isFlush) return [8, straightHigh];
-    if (groups[0].cnt === 4) return [7, groups[0].val, groups[1].val];
-    if (groups[0].cnt === 3 && groups[1] && groups[1].cnt === 2) return [6, groups[0].val, groups[1].val];
-    if (isFlush) return [5, ...hi];
-    if (isStraight) return [4, straightHigh];
-    if (groups[0].cnt === 3) return [3, groups[0].val, groups[1].val, groups[2] ? groups[2].val : 0];
-    if (groups[0].cnt === 2 && groups[1] && groups[1].cnt === 2) {
-      const p1 = Math.max(groups[0].val, groups[1].val);
-      const p2 = Math.min(groups[0].val, groups[1].val);
-      return [2, p1, p2, groups[2] ? groups[2].val : 0];
-    }
-    if (groups[0].cnt === 2) {
-      const kickers = groups.slice(1).map(g => g.val).sort((a, b) => b - a);
-      return [1, groups[0].val, ...kickers];
-    }
-    return [0, ...hi];
-  }
-
-  const HAND_NAMES = [
-    'High Card','One Pair','Two Pair','Three of a Kind',
-    'Straight','Flush','Full House','Four of a Kind','Straight Flush'
-  ];
-
-  function handName(score) {
-    if (score[0] === 8 && score[1] === 14) return '🌟 Royal Flush';
-    return HAND_NAMES[score[0]] || 'Unknown';
-  }
-
-  function compareHands(a, b) {
-    const sa = scoreHand(a), sb = scoreHand(b);
-    for (let i = 0; i < Math.max(sa.length, sb.length); i++) {
-      const diff = (sa[i] || 0) - (sb[i] || 0);
-      if (diff !== 0) return diff;
-    }
+  function compareScore(a,b){
+    for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d!==0)return d;}
     return 0;
   }
 
-  /* Returns HTML for one card (colored suit glyph) */
-  function cardHtml(card) {
-    const g = GLYPH[card.s] || card.s;
-    const isRed = RED[card.s];
-    return isRed
-      ? `<span class="suit-red">${card.r}${g}</span>`
-      : `${card.r}${g}`;
+  /* Best 5 of 7 (for 7-card hands) */
+  function bestFiveOf(cards) {
+    if (cards.length<=5) return cards;
+    let best=null,bestScore=null;
+    for (let i=0;i<cards.length-1;i++) for (let j=i+1;j<cards.length;j++){
+      const hand=cards.filter((_,k)=>k!==i&&k!==j);
+      const score=scoreHand5(hand);
+      if (!best||compareScore(score,bestScore)>0){best=hand;bestScore=score;}
+    }
+    return best;
+  }
+
+  function scoreHand(cards){
+    if (!cards||cards.length<5) return [0];
+    const active=cards.filter(c=>c&&!c.discard);
+    if (active.length<5) return [0];
+    const evalCards=active.length>5?bestFiveOf(active):active;
+    return scoreHand5(evalCards);
+  }
+
+  const HAND_NAMES=['High Card','One Pair','Two Pair','Three of a Kind',
+    'Straight','Flush','Full House','Four of a Kind','Straight Flush'];
+  function handName(score){
+    if(score[0]===8&&score[1]===14)return '\uD83D\uDC51 Royal Flush';
+    return HAND_NAMES[score[0]]||'Unknown';
+  }
+
+  /* Max discards by hand rank */
+  function getMaxDiscards(score){
+    const r=score[0];
+    if(r===0)return 3;
+    if(r===1)return score[1]>=11?1:2;
+    if(r===2)return 1;
+    return 0;
   }
 
   /* ---- QR payload parser ---- */
-  function parseHandQR(text) {
-    if (!text || !text.startsWith('PR1|')) return null;
-    const parts = text.split('|');
-    if (parts.length < 3) return null;
-    const name = parts[1].trim();
-    if (!name) return null;
-    const cardStrs = parts[2].split(',');
-    if (cardStrs.length < 5) return null;
-    const cards = cardStrs.map(cs => {
-      cs = cs.trim().toUpperCase();
-      const suit = cs.slice(-1);
-      const rank = cs.slice(0, -1);
-      return VALID_SUITS.includes(suit) && VALID_RANKS.includes(rank)
-        ? { r: rank, s: suit }
-        : null;
+  function parseHandQR(text){
+    if (!text||!text.startsWith('PR1|'))return null;
+    const parts=text.split('|');
+    if (parts.length<3)return null;
+    const name=parts[1].trim();
+    if (!name)return null;
+    const cardStrs=parts[2].split(',');
+    if (cardStrs.length<5)return null;
+    const cards=cardStrs.map(cs=>{
+      cs=cs.trim().toUpperCase();
+      const suit=cs.slice(-1),rank=cs.slice(0,-1);
+      return VALID_SUITS.includes(suit)&&VALID_RANKS.includes(rank)?{r:rank,s:suit,discard:false}:null;
     });
-    if (cards.some(c => !c)) return null;
-    return { name, cards };
+    if (cards.some(c=>!c))return null;
+    /* Parse optional discard flags (4th segment) */
+    if (parts.length>=4){
+      const flags=parts[3].split(',');
+      flags.forEach((f,i)=>{if(cards[i])cards[i].discard=f.trim()==='1';});
+    }
+    return {name,cards};
   }
 
   /* ---- Manual card parser ---- */
-  /* Accepts: "AS KH QD JC 10S"  or "A♠ K♥ Q♦ J♣ 10♠" */
-  function parseManualCards(text) {
-    const suitAlias = { '♠':'S','♥':'H','♦':'D','♣':'C','S':'S','H':'H','D':'D','C':'C' };
-    const tokens = text.trim().toUpperCase().split(/\s+/);
-    if (tokens.length !== 5) return null;
-    const cards = tokens.map(t => {
-      const sc  = t.slice(-1);
-      const rank = t.slice(0, -1);
-      const suit = suitAlias[sc];
-      return suit && VALID_RANKS.includes(rank) ? { r: rank, s: suit } : null;
+  function parseManualCards(text){
+    const suitAlias={'\u2660':'S','\u2665':'H','\u2666':'D','\u2663':'C',S:'S',H:'H',D:'D',C:'C'};
+    const tokens=text.trim().toUpperCase().split(/\s+/);
+    if (tokens.length<5)return null;
+    const cards=tokens.map(t=>{
+      const sc=t.slice(-1),rank=t.slice(0,-1),suit=suitAlias[sc];
+      return suit&&VALID_RANKS.includes(rank)?{r:rank,s:suit,discard:false}:null;
     });
-    return cards.some(c => !c) ? null : cards;
+    return cards.some(c=>!c)?null:cards;
+  }
+
+  /* ---- Shared draw deck (for the execute-draw feature) ---- */
+  let drawDeck=[];
+  function makeFullDeck(){
+    const d=[];
+    VALID_SUITS.forEach(s=>VALID_RANKS.forEach(r=>d.push({r,s,discard:false})));
+    return d;
+  }
+  function shuffleArray(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+    return a;
+  }
+  function initDrawDeck(){drawDeck=shuffleArray(makeFullDeck());}
+  function drawOneCard(){
+    if(drawDeck.length===0){initDrawDeck();toast('Draw deck reshuffled — 52 fresh cards.');}
+    return {...drawDeck.pop(),wasDrawn:true};
+  }
+  initDrawDeck();
+
+  function updateDrawDeckStatus(){
+    const el=document.getElementById('draw-deck-status');
+    if(el)el.textContent='Shared draw deck: '+drawDeck.length+' cards remaining';
   }
 
   /* ---- Riders data ---- */
-  let riders = []; // [{ name, cards, score }]
+  let riders=[];
 
-  function addOrUpdate(name, cards) {
-    const idx = riders.findIndex(r => r.name.toLowerCase() === name.toLowerCase());
-    const entry = { name, cards, score: scoreHand(cards) };
-    const isUpdate = idx >= 0;
-    if (isUpdate) riders[idx] = entry;
-    else riders.push(entry);
+  function addOrUpdate(name,cards){
+    const idx=riders.findIndex(r=>r.name.toLowerCase()===name.toLowerCase());
+    const score=scoreHand(cards);
+    const entry={name,cards,score};
+    if(idx>=0){
+      /* Keep existing organizer-set discards if new scan has no discards */
+      const hasNewDiscards=cards.some(c=>c.discard);
+      if(!hasNewDiscards&&riders[idx].cards.some(c=>c.discard)){
+        entry.cards=riders[idx].cards.map((old,i)=>({...cards[i],discard:old.discard}));
+        entry.score=scoreHand(entry.cards);
+      }
+      riders[idx]=entry;
+      toast('\u21BA Updated '+name+"'s hand.");
+    }else{
+      riders.push(entry);
+      toast('\u2713 '+name+' added!');
+    }
     renderLeaderboard();
-    showPreview(name, cards, entry.score);
-    toast(isUpdate ? `↺ Updated ${name}'s hand.` : `✓ ${name} added!`);
+    showPreview(name,cards,entry.score);
   }
 
-  /* ---- Preview panel ---- */
-  function showPreview(name, cards, score) {
-    document.getElementById('preview-name').textContent  = name;
-    document.getElementById('preview-cards').innerHTML   = cards.map(cardHtml).join('  ');
-    document.getElementById('preview-rank').textContent  = handName(score);
+  /* ---- Toggle discard (organizer taps a card in the leaderboard) ---- */
+  function toggleRiderDiscard(riderName,cardIdx){
+    const rider=riders.find(r=>r.name===riderName);
+    if(!rider)return;
+    const baseScore=scoreHand(rider.cards.map(c=>({...c,discard:false})));
+    const maxD=getMaxDiscards(baseScore);
+    const currentDiscards=rider.cards.filter(c=>c&&c.discard).length;
+    if(rider.cards[cardIdx].discard){
+      rider.cards[cardIdx].discard=false;
+    }else{
+      if(currentDiscards>=maxD){
+        toast(rider.name+' can only discard '+maxD+' card'+(maxD!==1?'s':'')+'.');return;
+      }
+      rider.cards[cardIdx].discard=true;
+    }
+    rider.score=scoreHand(rider.cards);
+    renderLeaderboard();
+  }
+
+  /* ---- Execute draw (the big drama moment) ---- */
+  function executeDraw(){
+    const pending=riders.filter(r=>r.cards.some(c=>c.discard));
+    if(pending.length===0){toast('No discards are marked.');return;}
+    if(!confirm('Execute the draw now?\n\nThis will replace all marked cards and re-rank the leaderboard.\n\nThis cannot be undone.'))return;
+
+    let totalDrawn=0;
+    pending.forEach(rider=>{
+      rider.cards=rider.cards.map(card=>{
+        if(card.discard){totalDrawn++;return{...drawOneCard(),wasDrawn:true};}
+        return card;
+      });
+      rider.score=scoreHand(rider.cards);
+    });
+
+    updateDrawDeckStatus();
+    renderLeaderboard();
+    toast('\uD83C\uDF89 Draw complete! '+totalDrawn+' card'+(totalDrawn!==1?'s':'')+' replaced.');
+  }
+
+  /* ---- Preview (last scanned rider) ---- */
+  function showPreview(name,cards,score){
+    const glyph=c=>RED[c.s]?`<span style="color:var(--red)">${c.r}${GLYPH[c.s]}</span>`:`${c.r}${GLYPH[c.s]}`;
+    document.getElementById('preview-name').textContent=name;
+    document.getElementById('preview-cards').innerHTML=cards.map(glyph).join('  ');
+    document.getElementById('preview-rank').textContent=handName(score);
     document.getElementById('preview').classList.add('show');
   }
 
   /* ---- Leaderboard ---- */
-  function renderLeaderboard() {
-    const sorted = [...riders].sort((a, b) => compareHands(b.cards, a.cards));
-    const countEl = document.getElementById('lb-count');
-    const body    = document.getElementById('lb-body');
-    const tieEl   = document.getElementById('tie-notice');
+  function renderLeaderboard(){
+    const sorted=[...riders].sort((a,b)=>compareScore(b.score,a.score));
+    document.getElementById('lb-count').textContent=riders.length+(riders.length===1?' rider':' riders');
+    const body=document.getElementById('lb-body');
 
-    countEl.textContent = riders.length + (riders.length === 1 ? ' rider' : ' riders');
-
-    if (sorted.length === 0) {
-      body.innerHTML =
-        '<div class="empty-state"><div class="icon">🃏</div>' +
-        '<p>No riders yet.<br>Scan QR codes as contestants arrive at the finish line.</p></div>';
-      tieEl.classList.remove('show');
-      return;
+    if(sorted.length===0){
+      body.innerHTML='<div class="empty-state"><div class="icon">\uD83C\uDCCF</div>'+
+        '<p>No riders yet.<br>Scan QR codes as contestants arrive.</p></div>';
+      updateDrawButton();return;
     }
 
-    // Detect tie for 1st
-    const topScore  = JSON.stringify(sorted[0].score);
-    const tiedFirst = sorted.filter(r => JSON.stringify(r.score) === topScore);
-    if (tiedFirst.length > 1) {
-      tieEl.textContent = '⚠️ Tie for 1st place between: ' +
-        tiedFirst.map(r => r.name).join(' & ') +
-        ' — consider a tiebreaker draw!';
+    /* Tie detection */
+    const topScore=JSON.stringify(sorted[0].score);
+    const tiedFirst=sorted.filter(r=>JSON.stringify(r.score)===topScore);
+    const tieEl=document.getElementById('tie-notice');
+    if(tiedFirst.length>1){
+      tieEl.textContent='\u26A0\uFE0F Tie for 1st: '+tiedFirst.map(r=>r.name).join(' & ')+
+        ' \u2014 consider a tiebreaker!';
       tieEl.classList.add('show');
-    } else {
-      tieEl.classList.remove('show');
-    }
+    }else{tieEl.classList.remove('show');}
 
-    const table = document.createElement('table');
-    const thead = document.createElement('thead');
-    thead.innerHTML =
-      '<tr><th>#</th><th>Rider</th><th>Hand</th><th>Cards</th><th></th></tr>';
-    table.appendChild(thead);
+    const table=document.createElement('table');
+    table.innerHTML='<thead><tr><th>#</th><th>Rider</th><th>Hand</th><th>Cards (tap to mark discard)</th><th></th></tr></thead>';
+    const tbody=document.createElement('tbody');
 
-    const tbody = document.createElement('tbody');
-    sorted.forEach((rider, idx) => {
-      const tr = document.createElement('tr');
-      tr.className = 'rank-' + (idx + 1);
-      const trophy = idx === 0 ? '🏆 ' : idx === 1 ? '🥈 ' : idx === 2 ? '🥉 ' : '';
-      tr.innerHTML =
-        `<td class="td-place">${idx + 1}</td>` +
-        `<td class="td-name">${trophy}${esc(rider.name)}</td>` +
-        `<td class="td-hand">${esc(handName(rider.score))}</td>` +
-        `<td class="td-cards">${rider.cards.map(cardHtml).join(' ')}</td>` +
-        `<td><button class="remove-btn" title="Remove" ` +
-          `onclick="removeRider(${JSON.stringify(rider.name)})">✕</button></td>`;
+    sorted.forEach((rider,idx)=>{
+      const tr=document.createElement('tr');
+      tr.className='rank-'+(idx+1);
+      const trophy=idx===0?'\uD83C\uDFC6 ':idx===1?'\uD83E\uDD48 ':idx===2?'\uD83E\uDD49 ':'';
+      const hasPending=rider.cards.some(c=>c.discard);
+      const hadDraw=rider.cards.some(c=>c.wasDrawn);
+      const handLabel=handName(rider.score)+
+        (hasPending?'<span class="pending-label">DISCARD PENDING</span>':'')+
+        (hadDraw&&!hasPending?'<span class="drawn-label">DREW CARDS</span>':'');
+
+      /* Cards HTML — each card is clickable to toggle discard */
+      const cardsHtml=rider.cards.map((card,ci)=>{
+        const g=GLYPH[card.s]||card.s;
+        const isRed=RED[card.s];
+        const rn=JSON.stringify(rider.name);
+        if(card.discard){
+          return `<span class="card-discard" onclick="toggleRiderDiscard(${rn},${ci})" title="Tap to keep">&#10005;</span>`;
+        }
+        const color=isRed?'color:var(--red)':'';
+        const wasDrawn=card.wasDrawn?'font-weight:900;color:#6fcf97':'';
+        const style=[color,wasDrawn].filter(Boolean).join(';');
+        return `<span class="card-normal" style="${style}" onclick="toggleRiderDiscard(${rn},${ci})" title="Tap to discard">${card.r}${g}</span>`;
+      }).join(' ');
+
+      tr.innerHTML=
+        `<td class="td-place">${idx+1}</td>`+
+        `<td class="td-name">${trophy}${esc(rider.name)}</td>`+
+        `<td class="td-hand">${handLabel}</td>`+
+        `<td class="td-cards">${cardsHtml}</td>`+
+        `<td><button class="remove-btn" onclick="removeRider(${JSON.stringify(rider.name)})" title="Remove">\u2715</button></td>`;
       tbody.appendChild(tr);
     });
-    table.appendChild(tbody);
 
-    body.innerHTML = '';
-    body.appendChild(table);
+    table.appendChild(tbody);
+    body.innerHTML='';body.appendChild(table);
+    updateDrawButton();
   }
 
-  function removeRider(name) {
-    if (!confirm(`Remove ${name} from the leaderboard?`)) return;
-    riders = riders.filter(r => r.name !== name);
+  function updateDrawButton(){
+    const btn=document.getElementById('execute-draw-btn');
+    const deckStatus=document.getElementById('draw-deck-status');
+    if(!btn)return;
+    const pendingCards=riders.reduce((acc,r)=>acc+r.cards.filter(c=>c.discard).length,0);
+    const pendingRiders=riders.filter(r=>r.cards.some(c=>c.discard)).length;
+    if(pendingCards>0){
+      btn.classList.add('visible');
+      document.getElementById('draw-btn-sub').textContent=
+        pendingRiders+' rider'+(pendingRiders!==1?'s':'')+' \u2014 '+
+        pendingCards+' card'+(pendingCards!==1?'s':'')+' pending';
+      deckStatus.classList.add('visible');
+      updateDrawDeckStatus();
+    }else{
+      btn.classList.remove('visible');
+      deckStatus.classList.remove('visible');
+    }
+  }
+
+  function removeRider(name){
+    if(!confirm('Remove '+name+' from the leaderboard?'))return;
+    riders=riders.filter(r=>r.name!==name);
     renderLeaderboard();
   }
 
-  function clearAll() {
-    if (riders.length === 0) return;
-    if (!confirm('Clear all riders and start fresh?')) return;
-    riders = [];
+  function clearAll(){
+    if(riders.length===0)return;
+    if(!confirm('Clear all riders and start fresh?'))return;
+    riders=[];initDrawDeck();
     renderLeaderboard();
     document.getElementById('preview').classList.remove('show');
-    toast('Leaderboard cleared.');
+    toast('Leaderboard cleared. Draw deck reset.');
   }
 
   /* ---- CSV Export ---- */
-  function exportCSV() {
-    if (riders.length === 0) { toast('No riders to export yet.'); return; }
-    const sorted = [...riders].sort((a, b) => compareHands(b.cards, a.cards));
-    const rows = [['Rank','Rider','Hand','Card 1','Card 2','Card 3','Card 4','Card 5']];
-    sorted.forEach((r, i) => {
-      const cardStrs = r.cards.map(c => c.r + GLYPH[c.s]);
-      rows.push([i+1, r.name, handName(r.score).replace('🌟 ',''), ...cardStrs]);
+  function exportCSV(){
+    if(riders.length===0){toast('No riders to export.');return;}
+    const sorted=[...riders].sort((a,b)=>compareScore(b.score,a.score));
+    const rows=[['Rank','Rider','Hand','Card 1','Card 2','Card 3','Card 4','Card 5','Card 6','Card 7']];
+    sorted.forEach((r,i)=>{
+      const cardStrs=r.cards.map(c=>c.r+GLYPH[c.s]+(c.wasDrawn?'*':'')+(c.discard?'(D)':''));
+      rows.push([i+1,r.name,handName(r.score).replace(/[\uD83C-\uDFFF\u2600-\u27BF]/gu,''),...cardStrs]);
     });
-    const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = 'poker-ride-results.csv'; a.click();
-    URL.revokeObjectURL(url);
-    toast('📥 CSV downloaded!');
+    const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='poker-ride-results.csv';a.click();
+    URL.revokeObjectURL(url);toast('\uD83D\uDCE5 CSV downloaded!');
   }
 
   /* ---- Manual entry ---- */
-  function submitManual() {
-    const name    = document.getElementById('m-name').value.trim();
-    const cardStr = document.getElementById('m-cards').value.trim();
-    if (!name)    { toast('Please enter a rider name.'); return; }
-    const cards = parseManualCards(cardStr);
-    if (!cards)   {
-      toast('Could not read the cards. Use format: AS KH QD JC 10S');
-      return;
-    }
-    addOrUpdate(name, cards);
-    document.getElementById('m-name').value  = '';
-    document.getElementById('m-cards').value = '';
+  function submitManual(){
+    const name=document.getElementById('m-name').value.trim();
+    const cardStr=document.getElementById('m-cards').value.trim();
+    if(!name){toast('Please enter a rider name.');return;}
+    const cards=parseManualCards(cardStr);
+    if(!cards){toast('Could not read the cards. Use format: AS KH QD JC 10S');return;}
+    addOrUpdate(name,cards);
+    document.getElementById('m-name').value='';
+    document.getElementById('m-cards').value='';
     document.getElementById('m-name').focus();
   }
 
-  /* ---- QR Scanner ---- */
-  let lastScan = 0;
+  /* ---- Toast ---- */
+  let toastTimer;
+  function toast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.style.display='block';
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>{t.style.display='none';},3400);
+  }
 
-  /* ---- Scanner state ---- */
-  let activeScanner  = null;   // current Html5Qrcode instance
-  let scannerRunning = false;  // true when camera feed is live
+  function esc(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 
-  function setCameraStatus(state) {
-    const dot        = document.getElementById('camera-dot');
-    const statusEl   = document.getElementById('scan-status');
-    const restartBtn = document.getElementById('camera-restart-btn');
-    if (state === 'active') {
-      if (dot)        dot.textContent        = '🟢';
-      if (restartBtn) restartBtn.style.display = 'none';
-      if (statusEl)   statusEl.textContent   = "Point camera at a rider's phone screen.";
-    } else if (state === 'starting' || state === 'restarting') {
-      if (dot)        dot.textContent        = '⏳';
-      if (restartBtn) restartBtn.style.display = 'none';
-      if (statusEl)   statusEl.textContent   =
-        state === 'restarting' ? 'Restarting camera…' : 'Starting camera…';
-    } else { // offline / error
-      if (dot)        dot.textContent        = '🔴';
-      if (restartBtn) restartBtn.style.display = 'inline-block';
-      if (statusEl)   statusEl.textContent   =
-        'Camera offline — click 🔄 Restart Camera to reconnect.';
+  /* ================================================================
+     QR SCANNER  (html5-qrcode, with wake-from-sleep detection)
+  ================================================================ */
+  let lastScan=0, activeScanner=null, scannerRunning=false;
+
+  function setCameraStatus(state){
+    const dot=document.getElementById('camera-dot');
+    const statusEl=document.getElementById('scan-status');
+    const restartBtn=document.getElementById('camera-restart-btn');
+    if(state==='active'){
+      if(dot)dot.textContent='\uD83D\uDFE2';
+      if(restartBtn)restartBtn.style.display='none';
+      if(statusEl)statusEl.textContent="Point camera at a rider's phone screen.";
+    }else if(state==='starting'||state==='restarting'){
+      if(dot)dot.textContent='\u23F3';
+      if(restartBtn)restartBtn.style.display='none';
+      if(statusEl)statusEl.textContent=state==='restarting'?'Restarting camera\u2026':'Starting camera\u2026';
+    }else{
+      if(dot)dot.textContent='\uD83D\uDD34';
+      if(restartBtn)restartBtn.style.display='inline-block';
+      if(statusEl)statusEl.textContent='Camera offline \u2014 click Restart Camera to reconnect.';
     }
   }
 
-  function stopScanner() {
-    return new Promise(function(resolve) {
-      if (activeScanner && scannerRunning) {
+  function stopScanner(){
+    return new Promise(resolve=>{
+      if(activeScanner&&scannerRunning){
         activeScanner.stop()
-          .then(function()  { cleanup(); resolve(); })
-          .catch(function() { cleanup(); resolve(); });
-      } else {
-        cleanup(); resolve();
-      }
+          .then(()=>{cleanup();resolve();})
+          .catch(()=>{cleanup();resolve();});
+      }else{cleanup();resolve();}
     });
-    function cleanup() {
-      if (activeScanner) {
-        try { activeScanner.clear(); } catch(e) {}
-        // Clear the DOM element so a fresh instance can mount cleanly
-        const el = document.getElementById('qr-reader');
-        if (el) el.innerHTML = '';
-      }
-      activeScanner  = null;
-      scannerRunning = false;
+    function cleanup(){
+      if(activeScanner){try{activeScanner.clear();}catch(e){}
+        const el=document.getElementById('qr-reader');if(el)el.innerHTML='';}
+      activeScanner=null;scannerRunning=false;
     }
   }
 
-  function startScanner() {
-    if (typeof Html5Qrcode === 'undefined') {
+  function startScanner(){
+    const statusEl=document.getElementById('scan-status');
+    if(typeof Html5Qrcode==='undefined'){
       setCameraStatus('offline');
-      const statusEl = document.getElementById('scan-status');
-      if (statusEl) statusEl.textContent =
-        'QR library did not load (need internet). Use manual entry.';
+      if(statusEl)statusEl.textContent='QR library not loaded. Use manual entry.';
       return;
     }
-
     setCameraStatus('starting');
-
-    activeScanner = new Html5Qrcode('qr-reader', { verbose: false });
-    const config  = {
-      fps: 10,
-      qrbox: function(w, h) {
-        var m = Math.floor(Math.min(w, h) * 0.72);
-        return { width: m, height: m };
-      },
-      aspectRatio: 1.0
-    };
-
+    activeScanner=new Html5Qrcode('qr-reader',{verbose:false});
+    const config={fps:10,qrbox:function(w,h){const m=Math.floor(Math.min(w,h)*0.72);return{width:m,height:m};},aspectRatio:1.0};
     activeScanner.start(
-      { facingMode: 'environment' },
-      config,
-      function onSuccess(text) {
-        const now = Date.now();
-        if (now - lastScan < 2000) return; // debounce
-        lastScan = now;
-
-        const result = parseHandQR(text);
-        const statusEl = document.getElementById('scan-status');
-        if (!result) {
-          if (statusEl) statusEl.textContent = '⚠ Not a Poker Ride QR code — try again.';
-          return;
-        }
-        if (statusEl) statusEl.textContent = '✓ Scanned: ' + result.name;
-        addOrUpdate(result.name, result.cards);
-        if (navigator.vibrate) try { navigator.vibrate([50,30,50]); } catch(e) {}
+      {facingMode:'environment'},config,
+      function onSuccess(text){
+        const now=Date.now();
+        if(now-lastScan<2000)return;
+        lastScan=now;
+        const result=parseHandQR(text);
+        const st=document.getElementById('scan-status');
+        if(!result){if(st)st.textContent='\u26A0 Not a Poker Ride QR code \u2014 try again.';return;}
+        if(st)st.textContent='\u2713 Scanned: '+result.name;
+        addOrUpdate(result.name,result.cards);
+        if(navigator.vibrate)try{navigator.vibrate([50,30,50]);}catch(e){}
       },
-      function onError() { /* per-frame miss — ignore */ }
-    ).then(function() {
-      scannerRunning = true;
-      setCameraStatus('active');
-    }).catch(function(err) {
-      scannerRunning = false;
-      setCameraStatus('offline');
-      console.warn('Scanner error:', err);
-    });
+      function onError(){}
+    ).then(()=>{scannerRunning=true;setCameraStatus('active');})
+     .catch(err=>{scannerRunning=false;setCameraStatus('offline');console.warn('Scanner:',err);});
   }
 
-  function restartScanner() {
+  function restartScanner(){
     setCameraStatus('restarting');
-    stopScanner().then(function() {
-      setTimeout(startScanner, 600); // brief pause lets the camera hardware reset
-    });
+    stopScanner().then(()=>{setTimeout(startScanner,700);});
   }
 
-  /* ---- Wake-from-sleep detection ---- */
-  /* The Page Visibility API fires 'visibilitychange' when the laptop
-     screen turns back on after sleep.  We use it to restart the camera
-     automatically so the volunteer doesn't have to do anything. */
-  document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      // Laptop going to sleep — stop cleanly to free the camera
-      if (scannerRunning) stopScanner();
-    } else {
-      // Laptop woke up — wait 1.5 s for hardware to stabilise, then restart
-      setTimeout(function() {
-        if (!scannerRunning) restartScanner();
-      }, 1500);
-    }
+  /* Wake from sleep */
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){if(scannerRunning)stopScanner();}
+    else{setTimeout(function(){if(!scannerRunning)restartScanner();},1500);}
   });
 
-  /* ---- Helpers ---- */
-  let toastTimer;
-  function toast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.style.display = 'block';
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3200);
-  }
-
-  function esc(str) {
-    return String(str)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  /* ================================================================
+     SERVICE WORKER (offline caching)
+  ================================================================ */
+  if('serviceWorker'in navigator){
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(function(reg){
+          const el=document.getElementById('offline-status');
+          if(reg.active){el.textContent='\u2705 Saved for offline use \u2014 works without WiFi';el.style.color='#6fcf97';}
+          else{const sw=reg.installing||reg.waiting;
+            if(sw)sw.addEventListener('statechange',function(){
+              if(sw.state==='activated'){el.textContent='\u2705 Saved for offline use \u2014 works without WiFi';el.style.color='#6fcf97';}
+            });
+          }
+        }).catch(()=>{
+          const el=document.getElementById('offline-status');
+          el.textContent='\u26A0\uFE0F Offline caching unavailable';el.style.color='#e8c66a';
+        });
+    });
   }
 
   /* ---- Boot ---- */
   renderLeaderboard();
   startScanner();
-
-  /* ---- Offline caching ---- */
-  /* Registering the same service-worker.js used by the rider app means
-     this page is cached on first visit and works forever without WiFi. */
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('./service-worker.js')
-        .then(function (reg) {
-          console.log('Finish-line: offline cache ready.');
-          // Update status badge
-          var el = document.getElementById('offline-status');
-          if (reg.active) {
-            el.textContent = '✅ Saved for offline use — works without WiFi';
-            el.style.color = '#6fcf97';
-          } else {
-            // First install — waiting for activation
-            var sw = reg.installing || reg.waiting;
-            if (sw) {
-              sw.addEventListener('statechange', function () {
-                if (sw.state === 'activated') {
-                  el.textContent = '✅ Saved for offline use — works without WiFi';
-                  el.style.color = '#6fcf97';
-                }
-              });
-            }
-          }
-        })
-        .catch(function () {
-          var el = document.getElementById('offline-status');
-          el.textContent = '⚠️ Offline caching unavailable — needs WiFi each time';
-          el.style.color = '#e8c66a';
-        });
-    });
-  } else {
-    document.getElementById('offline-status').textContent =
-      '⚠️ This browser does not support offline caching';
-  }
   </script>
 </body>
 </html>

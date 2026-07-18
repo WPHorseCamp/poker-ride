@@ -446,3 +446,38 @@ body {
 /* ================================================================
    CAMERA OVERLAY (wake detection) — same as finish-line
 ================================================================ */
+
+/* ================================================================
+   TAP-TO-DISCARD (hand screen)
+================================================================ */
+.tappable { cursor:pointer; }
+.tappable:active { opacity:.7; }
+
+.discard-marked {
+  opacity:.45;
+  background: #ddd !important;
+  color: #666 !important;
+  border: 2px dashed #999 !important;
+}
+.discard-marked.red { color:#999 !important; }
+
+.discard-x {
+  font-size:22px; font-weight:900; color:#c00;
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-58%);
+  z-index:2; line-height:1;
+}
+.mini-rank-sm { font-size:10px; line-height:1; position:absolute; top:4px; left:5px; opacity:.5; }
+.mini-suit-sm { font-size:10px; line-height:1; position:absolute; bottom:14px; right:4px; opacity:.5; }
+
+.discard-instr {
+  font-size:14px; color:#cfe0d6; text-align:center;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:10px; padding:10px 14px;
+  line-height:1.5; margin:0;
+}
+.discard-instr strong { color:var(--gold); }
+.discard-instr small  { color:#a9c2b5; font-size:12px; }
+.discard-instr em     { font-style:normal; color:var(--gold); }
+

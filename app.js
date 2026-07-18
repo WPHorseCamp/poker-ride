@@ -235,6 +235,23 @@
     return 0;
   }
 
+  /* Toggle a card's discard mark — called when rider taps a card */
+  function toggleDiscard(player, sid, maxAllowed) {
+    if (!player.discards) player.discards = {};
+    if (player.discards[sid]) {
+      delete player.discards[sid];               /* unmark */
+    } else {
+      var count = Object.keys(player.discards).length;
+      if (count >= maxAllowed) {
+        toast("Max "+maxAllowed+" discard"+(maxAllowed!==1?"s":"")+" allowed for this hand.");
+        return;
+      }
+      player.discards[sid] = true;               /* mark */
+    }
+    saveState();
+    renderHand();                                /* re-render to update QR + visuals */
+  }
+
   /* ================================================================
      SCREEN ROUTING
   ================================================================ */
@@ -427,17 +444,45 @@
         section.appendChild(nameEl);
       }
 
+      var evalCards=(is7&&filled.length===7)?bestResult.hand:filled;
+      var res=evaluateHand(evalCards);
+      var maxD=maxDiscards(res);
+
       var cardsDiv=document.createElement("div");
       cardsDiv.className="hand-cards";
+      var markedCount = 0;
+      if (p.discards) {
+        STATIONS.forEach(function(s){ if(p.discards[s]) markedCount++; });
+      }
+
       allCards.forEach(function(card, ci) {
         var mc=document.createElement("div");
+        var sid=STATIONS[ci];
+        var isDiscarded = p.discards && p.discards[sid];
         var isInBest=!is7||filled.length<7||bestIndices.indexOf(ci)>=0;
         if (card) {
           var suit=SUIT_MAP[card.s];
-          mc.className="mini-card"+(suit.red?" red":"")+(isInBest?"":" dim");
-          mc.innerHTML="<span class='mini-rank'>"+card.r+"</span>"+
-                       "<span class='mini-suit'>"+suit.glyph+"</span>"+
-                       "<span class='mini-station'>"+STATIONS[ci]+"</span>";
+          mc.className="mini-card"+(suit.red?" red":"")+
+            (isDiscarded?" discard-marked":"")+
+            (!isInBest&&!isDiscarded?" dim":"");
+          if (isDiscarded) {
+            mc.innerHTML="<span class='discard-x'>\u2715</span>"+
+                         "<span class='mini-rank-sm'>"+card.r+"</span>"+
+                         "<span class='mini-suit-sm'>"+suit.glyph+"</span>"+
+                         "<span class='mini-station'>"+sid+"</span>";
+          } else {
+            mc.innerHTML="<span class='mini-rank'>"+card.r+"</span>"+
+                         "<span class='mini-suit'>"+suit.glyph+"</span>"+
+                         "<span class='mini-station'>"+sid+"</span>";
+          }
+          /* Make tappable only when hand is complete and discards are allowed */
+          if (filled.length===STATIONS.length && maxD>0) {
+            mc.classList.add("tappable");
+            mc.title = isDiscarded ? "Tap to KEEP this card" : "Tap to DISCARD this card";
+            (function(playerRef, stationId, maxAllowed){
+              mc.addEventListener("click", function(){ toggleDiscard(playerRef, stationId, maxAllowed); });
+            })(p, sid, maxD);
+          }
         } else {
           mc.className="mini-card empty";
           mc.innerHTML="<span class='mini-rank'>?</span><span class='mini-station'>"+STATIONS[ci]+"</span>";
@@ -452,17 +497,25 @@
       rankDiv.className="hand-rank";
       rankDiv.innerHTML="<div class='rank-name'>"+res.name+"</div><div class='rank-desc'>"+res.desc+"</div>";
       if (is7&&filled.length===7)
-        rankDiv.innerHTML+="<div class='rank-note'>\u2605 Best 5 of 7 \u2014 highlighted cards above</div>";
+        rankDiv.innerHTML+="<div class='rank-note'>\u2605 Best 5 of 7 \u2014 highlighted above</div>";
       section.appendChild(rankDiv);
 
-      if (filled.length===STATIONS.length) {
-        var maxD=maxDiscards(res);
-        if (maxD>0) {
-          var dn=document.createElement("p"); dn.className="discard-note";
-          dn.innerHTML="At the finish line you may discard up to <strong>"+maxD+
-            "</strong> card"+(maxD!==1?"s":"")+".";
-          section.appendChild(dn);
+      /* Discard instruction — only shown when hand is complete and draw is allowed */
+      if (filled.length===STATIONS.length && maxD>0) {
+        var discardInstr = document.createElement("p");
+        discardInstr.className = "discard-instr";
+        if (markedCount === 0) {
+          discardInstr.innerHTML = "Tap cards to mark for discard <em>(up to "+maxD+")</em><br>" +
+            "<small>Or go straight to the finish line — discarding is optional</small>";
+        } else {
+          discardInstr.innerHTML = "<strong>"+markedCount+"</strong> card"+(markedCount!==1?"s":"")+" marked \u2014 "+
+            (maxD-markedCount>0 ? "tap more or " : "") +
+            "show your QR at the finish line";
         }
+        section.appendChild(discardInstr);
+      }
+      /* QR code — shown when all stations are complete */
+      if (filled.length===STATIONS.length) {
         var qrSec=document.createElement("div");qrSec.className="hand-qr-section";
         var qrLbl=document.createElement("p");qrLbl.className="qr-label";
         qrLbl.textContent="\uD83D\uDCF1 Show this QR at the finish line";
@@ -486,11 +539,23 @@
   }
 
   /* ================================================================
-     QR CODE
+     QR CODE  (includes discard flags when set)
   ================================================================ */
   function buildHandPayload(player) {
-    var cards=STATIONS.map(function(sid){var c=player.hand[sid];return c?(c.r+c.s):"??";});
-    return "PR1|"+player.name+"|"+cards.join(",");
+    var cards = STATIONS.map(function(sid){
+      var c = player.hand[sid]; return c?(c.r+c.s):"??";
+    });
+    var payload = "PR1|"+player.name+"|"+cards.join(",");
+    /* Add discard flags if rider has marked any cards */
+    var hasDiscards = player.discards &&
+      STATIONS.some(function(sid){ return player.discards[sid]; });
+    if (hasDiscards) {
+      var flags = STATIONS.map(function(sid){
+        return (player.discards&&player.discards[sid])?"1":"0";
+      });
+      payload += "|" + flags.join(",");
+    }
+    return payload;
   }
 
   function renderHandQR(player,container) {
