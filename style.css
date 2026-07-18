@@ -1,18 +1,23 @@
-:root{
-  --felt:#0b3d2e;
-  --felt-2:#0f5138;
-  --gold:#e8c66a;
-  --cream:#f6f1e3;
-  --ink:#1c1c1c;
-  --red:#c2362f;
-  --black:#1c1c1c;
-  --danger:#8c2b25;
-  --shadow:0 10px 30px rgba(0,0,0,.35);
+/* =====================================================================
+   Poker Ride — style.css  v3.0
+   Elderly-friendly: large touch targets, large fonts, clear contrast
+   ===================================================================== */
+:root {
+  --felt:   #0b3d2e;
+  --felt-2: #0f5138;
+  --gold:   #e8c66a;
+  --cream:  #f6f1e3;
+  --ink:    #1c1c1c;
+  --red:    #c2362f;
+  --danger: #8c2b25;
+  --shadow: 0 8px 24px rgba(0,0,0,.35);
+  /* Minimum touch target */
+  --touch:  58px;
 }
 
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-html,body{margin:0;height:100%;}
-body{
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; height:100%; }
+body {
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   color:var(--cream);
   background:radial-gradient(120% 120% at 50% 0%,var(--felt-2),var(--felt) 60%,#072518 100%);
@@ -20,216 +25,424 @@ body{
   -webkit-font-smoothing:antialiased;
   overscroll-behavior:none;
 }
-#app{
-  max-width:480px;margin:0 auto;min-height:100%;
+#app {
+  max-width:480px; margin:0 auto; min-height:100%;
   padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
-  display:flex;flex-direction:column;
+  display:flex; flex-direction:column;
 }
 
-/* ---------- Screens ---------- */
-.screen{display:none;flex-direction:column;flex:1;min-height:100vh;padding:18px 0 28px;}
-.screen.active{display:flex;}
-.hidden{display:none !important;}
+/* ---- Screens ---- */
+.screen { display:none; flex-direction:column; flex:1; min-height:100vh; padding:14px 0 24px; }
+.screen.active { display:flex; }
+.hidden { display:none !important; }
 
-/* ---------- Start ---------- */
-.brand{text-align:center;margin:8vh 0 24px;}
-.brand-suit{letter-spacing:6px;color:var(--gold);font-size:22px;opacity:.9;}
-.brand h1{font-size:40px;margin:8px 0 6px;color:var(--cream);letter-spacing:.5px;}
-.tagline{margin:0 auto;max-width:300px;color:#cfe0d6;font-size:15px;line-height:1.4;}
+/* ================================================================
+   START SCREEN
+================================================================ */
+.start-header {
+  text-align:center; padding:6vh 0 20px; position:relative;
+}
+.start-suits {
+  font-size:26px; letter-spacing:8px; color:var(--gold); margin-bottom:8px;
+}
+.start-club {
+  font-size:34px; font-weight:900; color:var(--cream);
+  letter-spacing:.5px; margin:0 0 6px;
+}
+.start-date {
+  font-size:16px; color:var(--gold); margin:0 0 4px; font-weight:600;
+}
 
-.card-panel{
+/* Gear icon — small but tucked in corner */
+.gear-btn {
+  position:absolute; top:6px; right:0;
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2);
+  color:var(--cream); font-size:22px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.gear-btn:active { background:rgba(232,198,106,.25); }
+
+/* Resume button — large, obvious, gold-outlined */
+.btn-resume {
+  background:rgba(232,198,106,.15);
+  border:2px solid var(--gold) !important;
+  color:var(--gold) !important;
+  font-size:17px; font-weight:700;
+  min-height:var(--touch);
+  border-radius:14px;
+  padding:14px 18px;
+  width:100%; cursor:pointer;
+  margin-top:12px;
+  line-height:1.3;
+  text-align:center;
+}
+.btn-resume:active { background:rgba(232,198,106,.3); }
+
+.fineprint { text-align:center; color:#a9c2b5; font-size:12px; margin-top:auto; padding-top:20px; }
+
+/* ================================================================
+   CARD PANEL (start form, settings)
+================================================================ */
+.card-panel {
   background:rgba(255,255,255,.06);
   border:1px solid rgba(232,198,106,.35);
-  border-radius:18px;padding:20px;box-shadow:var(--shadow);
-  display:flex;flex-direction:column;gap:12px;
-}
-.card-panel label{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);}
-input[type=text]{
-  width:100%;padding:14px 16px;border-radius:12px;border:none;
-  font-size:18px;background:var(--cream);color:var(--ink);
-}
-input[type=text]:focus{outline:3px solid var(--gold);}
-
-.fineprint{text-align:center;color:#a9c2b5;font-size:12px;margin-top:auto;padding-top:24px;}
-
-/* ---------- Buttons ---------- */
-.btn{
-  border:none;border-radius:12px;padding:15px 18px;font-size:17px;font-weight:600;
-  cursor:pointer;width:100%;transition:transform .05s ease,filter .15s ease;
-}
-.btn:active{transform:translateY(1px) scale(.995);}
-.btn-primary{background:linear-gradient(180deg,var(--gold),#d2a94a);color:#3a2c05;box-shadow:var(--shadow);}
-.btn-ghost{background:rgba(255,255,255,.08);color:var(--cream);border:1px solid rgba(255,255,255,.2);}
-.btn-danger{background:var(--danger);color:#fff;}
-.actions{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:18px;}
-
-/* ---------- Topbar ---------- */
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.topbar-title{font-size:16px;font-weight:600;letter-spacing:.5px;color:var(--cream);}
-.icon-btn{
-  width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.18);
-  background:rgba(255,255,255,.06);color:var(--cream);font-size:20px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
+  border-radius:18px; padding:20px; box-shadow:var(--shadow);
+  display:flex; flex-direction:column; gap:12px;
 }
 
-/* ---------- Scan ---------- */
-.scan-wrap{
-  position:relative;width:100%;aspect-ratio:1/1;border-radius:20px;overflow:hidden;
-  background:#000;box-shadow:var(--shadow);border:1px solid rgba(232,198,106,.3);
-}
-#scan-video{width:100%;height:100%;object-fit:cover;display:block;}
-#qr-reader{position:absolute;inset:0;width:100%;height:100%;}
-#qr-reader video{width:100%!important;height:100%!important;object-fit:cover;display:block;}
-#qr-reader img[alt="Info icon"],#qr-reader>div>span{display:none;} /* hide library chrome */
-.scan-frame{
-  position:absolute;inset:16%;border:3px solid var(--gold);border-radius:16px;
-  box-shadow:0 0 0 100vmax rgba(0,0,0,.25);pointer-events:none;
-}
-.scan-status{text-align:center;color:#cfe0d6;font-size:14px;min-height:20px;margin:14px 4px;}
-
-.manual-block{margin-top:6px;}
-.manual-label{text-align:center;color:#a9c2b5;font-size:13px;margin:0 0 10px;}
-.manual-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
-.manual-grid button{
-  padding:14px 0;border-radius:12px;border:1px solid rgba(232,198,106,.4);
-  background:rgba(255,255,255,.07);color:var(--cream);font-size:16px;font-weight:700;cursor:pointer;
-}
-.manual-grid button.done{background:rgba(232,198,106,.25);color:var(--gold);border-color:var(--gold);}
-
-/* ---------- Playing card ---------- */
-.card-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
-.playing-card{
-  position:relative;width:62vw;max-width:260px;aspect-ratio:2.5/3.5;background:#fff;border-radius:18px;
-  box-shadow:var(--shadow);color:var(--black);display:flex;align-items:center;justify-content:center;
-  animation:flip .5s ease;
-}
-.playing-card.red{color:var(--red);}
-.pc-suit-big{font-size:34vw;line-height:1;max-font-size:150px;}
-@media(min-width:480px){.pc-suit-big{font-size:150px;}}
-.pc-rank{position:absolute;font-size:7vw;font-weight:800;line-height:1;}
-@media(min-width:480px){.pc-rank{font-size:34px;}}
-.pc-top{top:12px;left:14px;}
-.pc-bottom{bottom:12px;right:14px;transform:rotate(180deg);}
-.card-caption{font-size:20px;font-weight:700;color:var(--cream);margin:0;}
-.card-progress{color:#a9c2b5;font-size:14px;margin:0;}
-@keyframes flip{from{transform:rotateY(90deg) scale(.9);opacity:0;}to{transform:none;opacity:1;}}
-
-/* ---------- Hand ---------- */
-.hand-stage{flex:1;display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:8px;}
-.hand-rider{font-size:20px;font-weight:700;margin:0;color:var(--cream);}
-.hand-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;}
-.mini-card{
-  width:58px;height:82px;background:#fff;border-radius:10px;color:var(--black);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--shadow);
-  position:relative;font-weight:800;
-}
-.mini-card.red{color:var(--red);}
-.mini-card.empty{background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.3);color:#7f998c;font-weight:600;}
-.mini-rank{font-size:20px;line-height:1;}
-.mini-suit{font-size:22px;line-height:1;}
-.mini-station{position:absolute;bottom:3px;font-size:9px;letter-spacing:1px;color:#888;font-weight:700;}
-.mini-card.red .mini-station{color:#c98;}
-.hand-rank{
-  text-align:center;background:rgba(232,198,106,.14);border:1px solid rgba(232,198,106,.4);
-  border-radius:14px;padding:14px 18px;min-width:60%;
-}
-.hand-rank .rank-name{font-size:24px;font-weight:800;color:var(--gold);}
-.hand-rank .rank-desc{font-size:13px;color:#cfe0d6;margin-top:4px;}
-.hand-progress{color:#a9c2b5;font-size:13px;margin:0;}
-.hand-restarts{
-  margin:4px 0 0;font-size:12px;letter-spacing:.3px;
-  color:#cdb06a;background:rgba(140,43,37,.18);
-  border:1px solid rgba(232,198,106,.3);border-radius:999px;padding:5px 12px;
-}
-.hand-restarts.flag{color:#f3c9c5;background:rgba(140,43,37,.4);border-color:#8c2b25;}
-
-
-/* ---------- Finish-line QR code ---------- */
-.hand-qr-section{
-  display:flex;flex-direction:column;align-items:center;gap:10px;
-  margin-top:14px;width:100%;
-}
-.qr-label{
-  font-size:13px;color:var(--gold);text-align:center;
-  margin:0;letter-spacing:.5px;font-weight:600;
-}
-/* class selector covers multi-player dynamic divs; #hand-qr kept for legacy */
-#hand-qr, .hand-qr{
-  background:var(--cream);padding:10px;border-radius:14px;
-  box-shadow:var(--shadow);display:inline-block;
-}
-#hand-qr canvas, #hand-qr img,
-.hand-qr canvas, .hand-qr img { display:block; }
-.qr-fallback{
-  color:var(--cream);font-size:12px;text-align:center;word-break:break-all;
-  background:rgba(255,255,255,.06);border:1px solid rgba(232,198,106,.35);
-  border-radius:12px;padding:12px 14px;line-height:1.5;
-}
-
-/* ---------- Camera start overlay ---------- */
-.camera-start-overlay{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.55);z-index:10;border-radius:20px;
-}
-.camera-start-btn{
-  background:linear-gradient(180deg,var(--gold),#d2a94a);color:#3a2c05;
-  border:none;border-radius:16px;padding:22px 32px;font-size:20px;font-weight:800;
-  cursor:pointer;text-align:center;line-height:1.5;box-shadow:var(--shadow);
+/* ================================================================
+   BUTTONS
+================================================================ */
+.btn {
+  border:none; border-radius:14px;
+  min-height:var(--touch);
+  padding:14px 18px;
+  font-size:18px; font-weight:700;
+  cursor:pointer; width:100%;
+  transition:filter .1s;
   -webkit-tap-highlight-color:transparent;
 }
-.camera-start-btn:active{transform:scale(.97);}
+.btn:active { filter:brightness(.9); }
 
-.toast{
-  position:fixed;left:50%;bottom:28px;transform:translateX(-50%);
-  background:#1c1c1c;color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;
-  box-shadow:var(--shadow);z-index:50;max-width:88%;text-align:center;
-  border:1px solid rgba(232,198,106,.4);
+.btn-primary {
+  background:linear-gradient(180deg,var(--gold),#d2a94a);
+  color:#3a2c05; box-shadow:var(--shadow);
+}
+.btn-ghost {
+  background:rgba(255,255,255,.08);
+  color:var(--cream);
+  border:1px solid rgba(255,255,255,.25);
+}
+.btn-danger {
+  background:var(--danger); color:#fff;
 }
 
-/* ---------- Multi-hand start form ---------- */
+/* Extra-large button variant */
+.btn-xl {
+  font-size:20px; min-height:64px; border-radius:16px;
+  letter-spacing:.3px;
+}
+
+/* VIEW MY HAND — always gold and prominent */
+.btn-view-hand {
+  background:rgba(232,198,106,.18);
+  border:2px solid var(--gold);
+  color:var(--gold);
+  font-size:19px; font-weight:800;
+  min-height:60px; border-radius:14px;
+  padding:14px 18px; width:100%;
+  cursor:pointer; text-align:center;
+  letter-spacing:.3px;
+  margin-top:8px;
+}
+.btn-view-hand:active { background:rgba(232,198,106,.35); }
+
+.actions { display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:14px; }
+
+/* ================================================================
+   TOPBAR
+================================================================ */
+.topbar {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
+}
+.topbar-title {
+  font-size:17px; font-weight:700; letter-spacing:.4px; color:var(--cream);
+  text-align:center; flex:1;
+}
+
+/* Back button — large text, easy to tap */
+.back-btn {
+  min-width:80px; min-height:44px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:10px; color:var(--cream);
+  font-size:16px; font-weight:600;
+  cursor:pointer; padding:8px 14px;
+  white-space:nowrap;
+}
+.back-btn:active { background:rgba(255,255,255,.18); }
+
+/* ================================================================
+   SETTINGS SCREEN
+================================================================ */
+.settings-body { margin-top:4px; }
+.settings-label {
+  font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--gold);
+  display:block; margin-bottom:5px;
+}
+.settings-hint {
+  font-size:12px; color:#a9c2b5; margin:-8px 0 8px;
+}
+.settings-input {
+  width:100%; padding:14px 16px; border-radius:12px; border:none;
+  font-size:17px; background:var(--cream); color:var(--ink);
+  margin-bottom:14px;
+}
+.settings-input:focus { outline:3px solid var(--gold); }
+.settings-textarea { resize:vertical; font-family:inherit; line-height:1.4; }
+
+/* Game mode toggle */
+.mode-toggle { display:flex; gap:10px; }
+.mode-btn {
+  flex:1; min-height:50px; border-radius:12px;
+  background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.2);
+  color:var(--cream); font-size:16px; font-weight:700; cursor:pointer;
+}
+.mode-btn.active {
+  background:rgba(232,198,106,.2); border-color:var(--gold); color:var(--gold);
+}
+.mode-btn:active { filter:brightness(.9); }
+
+/* ================================================================
+   PLAYER TABS
+================================================================ */
+.player-tabs {
+  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;
+}
+.player-tab {
+  flex:1; min-width:0; min-height:48px;
+  padding:10px 8px; border-radius:10px;
+  border:1px solid rgba(232,198,106,.35);
+  background:rgba(255,255,255,.06);
+  color:var(--cream); font-size:14px; font-weight:600;
+  cursor:pointer; text-align:center;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.player-tab.active {
+  background:rgba(232,198,106,.2); border-color:var(--gold); color:var(--gold);
+}
+
+/* ================================================================
+   SCAN SCREEN
+================================================================ */
+.scan-wrap {
+  position:relative; width:100%; aspect-ratio:1/1;
+  border-radius:18px; overflow:hidden; background:#000;
+  box-shadow:var(--shadow); border:1px solid rgba(232,198,106,.3);
+}
+#scan-video { width:100%; height:100%; object-fit:cover; display:block; }
+#qr-reader  { position:absolute; inset:0; width:100%; height:100%; }
+#qr-reader video { width:100%!important; height:100%!important; object-fit:cover; display:block; }
+#qr-reader img[alt="Info icon"],#qr-reader>div>span { display:none; }
+.scan-frame {
+  position:absolute; inset:16%;
+  border:3px solid var(--gold); border-radius:14px;
+  box-shadow:0 0 0 100vmax rgba(0,0,0,.22); pointer-events:none;
+}
+.scan-status {
+  text-align:center; color:#cfe0d6; font-size:15px; min-height:22px;
+  margin:12px 4px 6px; line-height:1.4;
+}
+
+/* Camera start overlay */
+.camera-start-overlay {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.55); z-index:10; border-radius:18px;
+}
+.camera-start-btn {
+  background:linear-gradient(180deg,var(--gold),#d2a94a); color:#3a2c05;
+  border:none; border-radius:16px; padding:24px 36px;
+  font-size:22px; font-weight:800; cursor:pointer;
+  text-align:center; line-height:1.5; box-shadow:var(--shadow);
+}
+.camera-start-btn:active { filter:brightness(.9); }
+
+/* Manual station buttons — LARGE for elderly dexterity */
+.manual-block { margin-top:10px; }
+.manual-label {
+  text-align:center; color:#a9c2b5; font-size:15px; margin:0 0 10px;
+}
+.manual-grid {
+  display:grid; grid-template-columns:repeat(5,1fr); gap:10px;
+}
+.manual-grid button {
+  min-height:64px; border-radius:14px;
+  border:2px solid rgba(232,198,106,.45);
+  background:rgba(255,255,255,.08);
+  color:var(--cream); font-size:18px; font-weight:800; cursor:pointer;
+}
+.manual-grid button.done {
+  background:rgba(232,198,106,.25); color:var(--gold); border-color:var(--gold);
+}
+
+/* ================================================================
+   HAND STRIP  (mini cards on scan and card screens)
+================================================================ */
+.hand-strip-section {
+  margin-top:12px;
+}
+.hand-strip-label {
+  font-size:13px; color:#a9c2b5; text-align:center; margin:0 0 8px;
+}
+.hand-strip {
+  display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
+}
+.strip-card {
+  width:46px; height:62px; background:#fff; border-radius:8px;
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.3);
+  color:var(--ink); font-weight:800;
+}
+.strip-card.red    { color:var(--red); }
+.strip-card.empty  {
+  background:rgba(255,255,255,.07);
+  border:1px dashed rgba(255,255,255,.3);
+  color:#7f998c; font-size:11px; font-weight:600;
+}
+.strip-rank { font-size:17px; line-height:1; }
+.strip-suit { font-size:16px; line-height:1; }
+
+/* ================================================================
+   PLAYING CARD  (full card on card screen)
+================================================================ */
+.card-stage {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px; padding:8px 0;
+}
+.playing-card {
+  position:relative; width:62vw; max-width:260px; aspect-ratio:2.5/3.5;
+  background:#fff; border-radius:18px; box-shadow:var(--shadow);
+  color:var(--ink); display:flex; align-items:center; justify-content:center;
+  animation:flip .45s ease;
+}
+.playing-card.red { color:var(--red); }
+.pc-suit-big { font-size:34vw; line-height:1; }
+@media(min-width:480px){ .pc-suit-big { font-size:150px; } }
+.pc-rank { position:absolute; font-size:7.5vw; font-weight:800; line-height:1; }
+@media(min-width:480px){ .pc-rank { font-size:36px; } }
+.pc-top    { top:12px;    left:14px; }
+.pc-bottom { bottom:12px; right:14px; transform:rotate(180deg); }
+.card-caption  { font-size:21px; font-weight:700; color:var(--cream); margin:0; }
+.card-progress { color:#a9c2b5; font-size:15px; margin:0; text-align:center; line-height:1.4; }
+@keyframes flip {
+  from { transform:rotateY(90deg) scale(.9); opacity:0; }
+  to   { transform:none; opacity:1; }
+}
+
+/* ================================================================
+   HAND SCREEN
+================================================================ */
+.hand-stage {
+  flex:1; display:flex; flex-direction:column;
+  align-items:center; gap:14px; padding-top:6px;
+  overflow-y:auto;
+}
+.hand-player-section {
+  width:100%; display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+.hand-rider {
+  font-size:22px; font-weight:800; margin:0; color:var(--cream);
+}
+.hand-cards {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+}
+.mini-card {
+  width:60px; height:84px; background:#fff; border-radius:10px;
+  color:var(--ink); display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  box-shadow:var(--shadow); position:relative; font-weight:800;
+}
+.mini-card.red     { color:var(--red); }
+.mini-card.empty   {
+  background:rgba(255,255,255,.06);
+  border:1px dashed rgba(255,255,255,.3); color:#7f998c; font-weight:600;
+}
+.mini-card.dim     { opacity:.35; }
+.mini-rank    { font-size:20px; line-height:1; }
+.mini-suit    { font-size:22px; line-height:1; }
+.mini-station { position:absolute; bottom:3px; font-size:9px; letter-spacing:1px; color:#888; font-weight:700; }
+.mini-card.red .mini-station { color:#c98; }
+
+.hand-rank {
+  text-align:center; background:rgba(232,198,106,.14);
+  border:1px solid rgba(232,198,106,.4);
+  border-radius:14px; padding:14px 18px; min-width:60%;
+}
+.rank-name { font-size:24px; font-weight:800; color:var(--gold); }
+.rank-desc { font-size:14px; color:#cfe0d6; margin-top:4px; }
+.rank-note { font-size:12px; color:#a9c2b5; margin-top:6px; }
+
+.discard-note {
+  font-size:14px; color:var(--gold); text-align:center; margin:0;
+  background:rgba(232,198,106,.1); border:1px solid rgba(232,198,106,.3);
+  border-radius:10px; padding:10px 14px;
+}
+
+.hand-restarts {
+  font-size:12px; color:#cdb06a;
+  background:rgba(140,43,37,.18);
+  border:1px solid rgba(232,198,106,.3);
+  border-radius:999px; padding:5px 14px; margin:4px 0 0;
+}
+.hand-restarts.flag { color:#f3c9c5; background:rgba(140,43,37,.4); border-color:#8c2b25; }
+
+.player-divider {
+  width:90%; border:none; border-top:1px solid rgba(255,255,255,.12); margin:6px 0;
+}
+
+/* ================================================================
+   MULTI-HAND START FORM
+================================================================ */
 .name-row { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; }
 .name-row-label {
   font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--gold);
 }
-.name-row-wrap  { display:flex; gap:8px; align-items:center; }
+.name-row-wrap { display:flex; gap:8px; align-items:center; }
 .name-row-input {
-  flex:1; padding:13px 15px; border-radius:12px; border:none;
-  font-size:17px; background:var(--cream); color:var(--ink);
+  flex:1; padding:14px 16px; border-radius:12px; border:none;
+  font-size:18px; background:var(--cream); color:var(--ink);
 }
 .name-row-input:focus { outline:3px solid var(--gold); }
 .remove-name-btn {
-  flex-shrink:0; width:42px; height:42px; border-radius:50%;
+  flex-shrink:0; width:46px; height:46px; border-radius:50%;
   border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08);
   color:var(--cream); font-size:18px; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
 }
 .remove-name-btn:active { background:rgba(140,43,37,.5); }
 .add-hand-btn {
-  font-size:16px; font-weight:800; letter-spacing:.5px;
+  font-size:17px; font-weight:800;
   border:2px dashed rgba(232,198,106,.6) !important;
-  color:var(--gold) !important; margin-bottom:4px;
+  color:var(--gold) !important;
 }
 .add-hand-btn:active { background:rgba(232,198,106,.15) !important; }
 
-/* ---------- Player tabs (scan screen) ---------- */
-.player-tabs {
-  display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;
+/* ================================================================
+   QR CODE (finish line QR on hand screen)
+================================================================ */
+.hand-qr-section {
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  margin-top:6px; width:100%;
 }
-.player-tab {
-  flex:1; min-width:0; padding:10px 8px; border-radius:10px;
-  border:1px solid rgba(232,198,106,.35); background:rgba(255,255,255,.06);
-  color:var(--cream); font-size:13px; font-weight:600; cursor:pointer;
-  text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.qr-label {
+  font-size:14px; color:var(--gold); text-align:center;
+  margin:0; letter-spacing:.4px; font-weight:700;
 }
-.player-tab.active {
-  background:rgba(232,198,106,.2); border-color:var(--gold); color:var(--gold);
+.hand-qr, #hand-qr {
+  background:var(--cream); padding:10px; border-radius:14px;
+  box-shadow:var(--shadow); display:inline-block;
+}
+.hand-qr canvas, .hand-qr img,
+#hand-qr canvas, #hand-qr img { display:block; }
+.qr-fallback {
+  color:var(--cream); font-size:12px; text-align:center; word-break:break-all;
+  background:rgba(255,255,255,.06); border:1px solid rgba(232,198,106,.35);
+  border-radius:12px; padding:12px 14px; line-height:1.5;
 }
 
-/* ---------- Hand screen — multi-player ---------- */
-.hand-player-section {
-  width:100%; display:flex; flex-direction:column; align-items:center; gap:14px;
-  padding: 4px 0;
+/* ================================================================
+   TOAST
+================================================================ */
+.toast {
+  position:fixed; left:50%; bottom:28px; transform:translateX(-50%);
+  background:#1c1c1c; color:#fff; padding:14px 20px;
+  border-radius:12px; font-size:16px; box-shadow:var(--shadow);
+  z-index:50; max-width:88%; text-align:center;
+  border:1px solid rgba(232,198,106,.4);
 }
-.player-divider {
-  width:90%; border:none; border-top:1px solid rgba(255,255,255,.12); margin:8px 0;
-}
+
+/* ================================================================
+   CAMERA OVERLAY (wake detection) — same as finish-line
+================================================================ */

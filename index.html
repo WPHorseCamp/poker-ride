@@ -11,119 +11,191 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="img/icon-192.png" />
   <link rel="stylesheet" href="style.css" />
-  <!-- Optional QR decoder. If lib/jsQR.min.js is present, live camera scanning
-       works on every phone (including iPhone). If it is absent, the app still
-       works using the native scanner (Android) or the manual station buttons. -->
-  <script src="lib/jsQR.min.js" onerror="window.__jsqrMissing=true"></script>
+  <script src="lib/qrcode.min.js" onerror="window.__qrcodeMissing=true"></script>
+  <script src="lib/jsQR.min.js"   onerror="window.__jsqrMissing=true"></script>
 </head>
 <body>
-  <div id="app">
+<div id="app">
 
-    <!-- ============ START SCREEN ============ -->
-    <section id="screen-start" class="screen active">
-      <div class="brand">
-        <div class="brand-suit">&#9824;&#9829;&#9827;&#9830;</div>
-        <h1>Poker Ride</h1>
-        <p class="tagline">Scan a station. Draw a card. Best hand at the finish wins.</p>
-      </div>
-      <form id="start-form" class="card-panel" autocomplete="off">
-        <div id="name-inputs-container"></div>
-        <button type="button" id="add-hand-btn" class="btn btn-ghost add-hand-btn">
-          ＋ ADD HAND
-        </button>
-        <button type="submit" class="btn btn-primary">Start Ride</button>
-      </form>
-      <button id="resume-btn" class="btn btn-ghost hidden">Resume current ride</button>
-      <p class="fineprint">Works offline. Add to your Home Screen for the best experience.</p>
-    </section>
+  <!-- ============================================================
+       START SCREEN
+  ============================================================ -->
+  <section id="screen-start" class="screen active">
 
-    <!-- ============ SCAN SCREEN ============ -->
-    <section id="screen-scan" class="screen">
-      <header class="topbar">
-        <button class="icon-btn" data-nav="start" aria-label="Back">&#8592;</button>
-        <span class="topbar-title" id="scan-topbar-title">Scan station</span>
-        <button class="icon-btn" data-nav="hand" aria-label="View hand">&#9824;</button>
-      </header>
+    <div class="start-header">
+      <div class="start-suits">&#9824; &#9829; &#9830; &#9827;</div>
+      <h1 class="start-club" id="club-name-display">Poker Ride</h1>
+      <p  class="start-date"  id="ride-date-display" style="display:none"></p>
+      <button class="gear-btn" id="gear-btn" aria-label="Settings">&#9881;</button>
+    </div>
 
-      <!-- Player tabs — hidden for single player, visible for multi -->
-      <div id="player-tabs" class="player-tabs hidden"></div>
-
-      <div class="scan-wrap">
-        <!-- Tap-to-start overlay — visible first; hidden once camera is running.
-             Giving iOS a real tap event is required for the camera permission
-             dialog to appear on older iPhones (6s / iOS 12-15). -->
-        <div id="camera-start-overlay" class="camera-start-overlay">
-          <button id="camera-start-btn" type="button" class="camera-start-btn">
-            📷<br>Tap to Start Camera
-          </button>
-        </div>
-        <video id="scan-video" playsinline muted></video>
-        <div id="qr-reader" class="hidden"></div>
-        <div class="scan-frame hidden"></div>
-        <canvas id="scan-canvas" class="hidden"></canvas>
-      </div>
-
-      <p id="scan-status" class="scan-status">Point your camera at the station QR code.</p>
-      <button id="camera-retry-btn" class="btn btn-ghost hidden" style="margin:0 0 6px;">
-        📷 Try Camera Again
+    <form id="start-form" class="card-panel" autocomplete="off">
+      <div id="name-inputs-container"></div>
+      <button type="button" id="add-hand-btn" class="btn btn-ghost add-hand-btn">
+        &#65291; ADD HAND
       </button>
+      <button type="submit" class="btn btn-primary btn-xl">
+        &#127922; START RIDE
+      </button>
+    </form>
 
-      <div class="manual-block">
-        <p class="manual-label">No camera? Tap your station:</p>
-        <div id="manual-stations" class="manual-grid"></div>
+    <button id="resume-btn" class="btn btn-resume hidden">
+      &#9654; Resume Today's Ride
+    </button>
+
+    <p class="fineprint">
+      Works offline &nbsp;&middot;&nbsp; Add to your Home Screen for best results
+    </p>
+  </section>
+
+  <!-- ============================================================
+       SETTINGS SCREEN
+  ============================================================ -->
+  <section id="screen-settings" class="screen">
+    <header class="topbar">
+      <button class="back-btn" data-nav="start">&#8592; Back</button>
+      <span class="topbar-title">Settings</span>
+      <span></span>
+    </header>
+
+    <div class="settings-body card-panel">
+      <label class="settings-label">Club Name</label>
+      <input id="set-club-name" type="text" class="settings-input"
+             placeholder="e.g. Willow Prairie Horse Camp" maxlength="60" />
+
+      <label class="settings-label">Poker Ride Date</label>
+      <input id="set-ride-date" type="date" class="settings-input" />
+
+      <label class="settings-label">Contact Info</label>
+      <textarea id="set-contact" class="settings-input settings-textarea"
+                placeholder="Website address&#10;Contact name &amp; phone number"
+                rows="3"></textarea>
+
+      <label class="settings-label">Game Mode</label>
+      <p class="settings-hint">5 Card = standard poker &nbsp;&middot;&nbsp; 7 Card = best 5 of 7</p>
+      <div class="mode-toggle">
+        <button type="button" id="mode-5" class="mode-btn active">5 Card Poker</button>
+        <button type="button" id="mode-7" class="mode-btn">7 Card Poker</button>
       </div>
-    </section>
 
-    <!-- ============ CARD DISPLAY SCREEN ============ -->
-    <section id="screen-card" class="screen">
-      <header class="topbar">
-        <button class="icon-btn" data-nav="scan" aria-label="Back to scan">&#8592;</button>
-        <span class="topbar-title" id="card-station-title">Station</span>
-        <button class="icon-btn" data-nav="hand" aria-label="View hand">&#9824;</button>
-      </header>
+      <button id="save-settings-btn" class="btn btn-primary" style="margin-top:20px;">
+        &#10003; Save Settings
+      </button>
+    </div>
+  </section>
 
-      <div class="card-stage">
-        <div id="playing-card" class="playing-card">
-          <span class="pc-rank pc-top"></span>
-          <span class="pc-suit-big"></span>
-          <span class="pc-rank pc-bottom"></span>
-        </div>
-        <p id="card-caption" class="card-caption"></p>
-        <p id="card-progress" class="card-progress"></p>
+  <!-- ============================================================
+       SCAN SCREEN
+  ============================================================ -->
+  <section id="screen-scan" class="screen">
+    <header class="topbar">
+      <button class="back-btn" data-nav="start">&#8592; Home</button>
+      <span class="topbar-title" id="scan-topbar-title">Scan Station</span>
+      <span></span>
+    </header>
+
+    <!-- Player tabs (hidden for single player) -->
+    <div id="player-tabs" class="player-tabs hidden"></div>
+
+    <!-- Camera view -->
+    <div class="scan-wrap">
+      <div id="camera-start-overlay" class="camera-start-overlay">
+        <button id="camera-start-btn" type="button" class="camera-start-btn">
+          &#128247;<br>Tap to Start Camera
+        </button>
       </div>
+      <video id="scan-video" playsinline muted></video>
+      <div id="qr-reader" class="hidden"></div>
+      <div class="scan-frame hidden"></div>
+      <canvas id="scan-canvas" class="hidden"></canvas>
+    </div>
 
-      <div class="actions">
-        <button class="btn btn-primary" data-nav="scan">Next Station</button>
-        <button class="btn btn-ghost" data-nav="hand">View My Hand</button>
+    <p id="scan-status" class="scan-status">Tap the button above to open your camera.</p>
+    <button id="camera-retry-btn" class="btn btn-ghost hidden" style="margin-bottom:6px;">
+      &#128247; Try Camera Again
+    </button>
+
+    <!-- Large VIEW MY HAND button — always visible so riders can't miss it -->
+    <button class="btn btn-view-hand" data-nav="hand">
+      &#128203; VIEW MY HAND
+    </button>
+
+    <!-- Manual station buttons (fallback) -->
+    <div class="manual-block hidden">
+      <p class="manual-label">No camera? Tap your station number:</p>
+      <div id="manual-stations" class="manual-grid"></div>
+    </div>
+
+    <!-- Mini hand strip — shows cards drawn so far -->
+    <div class="hand-strip-section">
+      <p class="hand-strip-label">Cards drawn so far:</p>
+      <div id="hand-strip" class="hand-strip"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CARD DISPLAY SCREEN
+  ============================================================ -->
+  <section id="screen-card" class="screen">
+    <header class="topbar">
+      <button class="back-btn" data-nav="scan">&#8592; Scan</button>
+      <span class="topbar-title" id="card-station-title">Station</span>
+      <span></span>
+    </header>
+
+    <div class="card-stage">
+      <div id="playing-card" class="playing-card">
+        <span class="pc-rank pc-top"></span>
+        <span class="pc-suit-big"></span>
+        <span class="pc-rank pc-bottom"></span>
       </div>
-    </section>
+      <p id="card-caption"  class="card-caption"></p>
+      <p id="card-progress" class="card-progress"></p>
+    </div>
 
-    <!-- ============ FINAL HAND SCREEN ============ -->
-    <section id="screen-hand" class="screen">
-      <header class="topbar">
-        <button class="icon-btn" data-nav="scan" aria-label="Back to scan">&#8592;</button>
-        <span class="topbar-title">My Hand</span>
-        <span class="icon-btn" aria-hidden="true"></span>
-      </header>
+    <!-- Hand strip also shown here -->
+    <div class="hand-strip-section">
+      <p class="hand-strip-label">Your hand so far:</p>
+      <div id="hand-strip-card" class="hand-strip"></div>
+    </div>
 
-      <div class="hand-stage" id="hand-stage">
-        <!-- populated dynamically by renderHand() for each player -->
-      </div>
+    <div class="actions">
+      <button class="btn btn-primary btn-xl" data-nav="scan">
+        &#128247; NEXT STATION
+      </button>
+      <button class="btn btn-view-hand" data-nav="hand">
+        &#128203; VIEW MY HAND
+      </button>
+    </div>
+  </section>
 
-      <div class="actions">
-        <button class="btn btn-primary" data-nav="scan">Back to Scanning</button>
-        <button id="restart-btn" class="btn btn-danger">Restart Ride</button>
-      </div>
-    </section>
+  <!-- ============================================================
+       FINAL HAND SCREEN
+  ============================================================ -->
+  <section id="screen-hand" class="screen">
+    <header class="topbar">
+      <button class="back-btn" data-nav="scan">&#8592; Scan</button>
+      <span class="topbar-title">My Hand</span>
+      <span></span>
+    </header>
 
-  </div>
+    <div class="hand-stage" id="hand-stage">
+      <!-- populated by renderHand() -->
+    </div>
 
-  <!-- Toast -->
-  <div id="toast" class="toast hidden"></div>
+    <div class="actions">
+      <button class="btn btn-primary btn-xl" data-nav="scan">
+        &#128247; BACK TO SCANNING
+      </button>
+      <button id="restart-btn" class="btn btn-danger">
+        &#128260; Restart Ride
+      </button>
+    </div>
+  </section>
 
-  <!-- QR-code GENERATOR — download qrcode.min.js and place in lib/
-       Get it from: https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js -->
-  <script src="lib/qrcode.min.js" onerror="window.__qrcodeMissing=true"></script>
-  <script src="app.js"></script>
+</div><!-- #app -->
+
+<div id="toast" class="toast hidden"></div>
+<script src="app.js"></script>
 </body>
 </html>
