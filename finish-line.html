@@ -155,8 +155,30 @@
     tr.rank-1 .td-hand { color:rgba(232,198,106,.7); }
     .td-cards   { font-family:monospace; font-size:14px; letter-spacing:.3px; white-space:nowrap; }
     .suit-red   { color:var(--red); }
-    .card-discard { color:#777; text-decoration:line-through; cursor:pointer; font-size:13px; }
-    .card-normal  { cursor:pointer; }
+    /* Card cells — larger click/tap targets with hover feedback */
+    .card-cell {
+      display:inline-block;
+      min-width:26px;
+      padding:3px 4px;
+      margin:1px;
+      border-radius:5px;
+      cursor:pointer;
+      user-select:none;
+      font-family:monospace;
+      font-size:14px;
+      letter-spacing:.2px;
+      transition:background .1s;
+    }
+    .card-cell:hover { background:rgba(255,255,255,.18); }
+    .card-discard { color:#888; text-decoration:line-through; }
+    .card-discard:hover { background:rgba(194,54,47,.25) !important; color:#fff; }
+    .card-normal  { }
+
+    .eligible-label {
+      font-size:11px; color:#a9c2b5; font-weight:700;
+      background:rgba(169,194,181,.15); border-radius:4px;
+      padding:2px 6px; margin-left:6px; white-space:nowrap;
+    }
 
     .pending-label {
       font-size:11px; color:var(--gold); font-weight:700;
@@ -345,7 +367,9 @@
 
   function scoreHand(cards){
     if (!cards||cards.length<5) return [0];
-    const active=cards.filter(c=>c&&!c.discard);
+    /* Score the full current hand — discard marks are intentions only,
+       not actual removals. The hand is re-scored after executeDraw. */
+    const active=cards.filter(c=>c);
     if (active.length<5) return [0];
     const evalCards=active.length>5?bestFiveOf(active):active;
     return scoreHand5(evalCards);
@@ -530,30 +554,36 @@
       const trophy=idx===0?'\uD83C\uDFC6 ':idx===1?'\uD83E\uDD48 ':idx===2?'\uD83E\uDD49 ':'';
       const hasPending=rider.cards.some(c=>c.discard);
       const hadDraw=rider.cards.some(c=>c.wasDrawn);
+      const baseScore=scoreHand(rider.cards);
+      const maxD=getMaxDiscards(baseScore);
+      const isEligible=maxD>0 && !hasPending && !hadDraw;
+
       const handLabel=handName(rider.score)+
         (hasPending?'<span class="pending-label">DISCARD PENDING</span>':'')+
+        (isEligible?'<span class="eligible-label">DRAW ELIGIBLE (up to '+maxD+')</span>':'')+
         (hadDraw&&!hasPending?'<span class="drawn-label">DREW CARDS</span>':'');
 
-      /* Cards HTML — each card is clickable to toggle discard */
+      /* Cards — use data-rider / data-idx attributes to avoid quote-in-onclick bugs */
       const cardsHtml=rider.cards.map((card,ci)=>{
         const g=GLYPH[card.s]||card.s;
         const isRed=RED[card.s];
-        const rn=JSON.stringify(rider.name);
+        const safeName=esc(rider.name);
         if(card.discard){
-          return `<span class="card-discard" onclick="toggleRiderDiscard(${rn},${ci})" title="Tap to keep">&#10005;</span>`;
+          return `<span class="card-cell card-discard" data-rider="${safeName}" data-idx="${ci}" title="Click to KEEP">\u2715</span>`;
         }
         const color=isRed?'color:var(--red)':'';
         const wasDrawn=card.wasDrawn?'font-weight:900;color:#6fcf97':'';
         const style=[color,wasDrawn].filter(Boolean).join(';');
-        return `<span class="card-normal" style="${style}" onclick="toggleRiderDiscard(${rn},${ci})" title="Tap to discard">${card.r}${g}</span>`;
-      }).join(' ');
+        const tip=maxD>0?'Click to mark for DISCARD':'';
+        return `<span class="card-cell card-normal" data-rider="${safeName}" data-idx="${ci}" style="${style}" title="${tip}">${card.r}${g}</span>`;
+      }).join('');
 
       tr.innerHTML=
         `<td class="td-place">${idx+1}</td>`+
         `<td class="td-name">${trophy}${esc(rider.name)}</td>`+
         `<td class="td-hand">${handLabel}</td>`+
         `<td class="td-cards">${cardsHtml}</td>`+
-        `<td><button class="remove-btn" onclick="removeRider(${JSON.stringify(rider.name)})" title="Remove">\u2715</button></td>`;
+        `<td><button class="remove-btn" data-remove="${esc(rider.name)}" title="Remove">\u2715</button></td>`;
       tbody.appendChild(tr);
     });
 
@@ -736,6 +766,27 @@
         });
     });
   }
+
+  /* ---- Event delegation for leaderboard clicks (cards + remove buttons) ---- */
+  /* Using data attributes avoids the quote-in-onclick HTML bug */
+  document.addEventListener('click', function(e) {
+    /* Card click — toggle discard */
+    const cardCell = e.target.closest('.card-cell');
+    if (cardCell) {
+      const riderName = cardCell.dataset.rider;
+      const cardIdx   = parseInt(cardCell.dataset.idx, 10);
+      if (riderName !== undefined && !isNaN(cardIdx)) {
+        toggleRiderDiscard(riderName, cardIdx);
+      }
+      return;
+    }
+    /* Remove button click */
+    const removeBtn = e.target.closest('[data-remove]');
+    if (removeBtn) {
+      removeRider(removeBtn.dataset.remove);
+      return;
+    }
+  });
 
   /* ---- Boot ---- */
   renderLeaderboard();
