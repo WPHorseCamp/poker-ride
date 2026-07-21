@@ -233,11 +233,26 @@
         <div class="panel-title">
           <span id="camera-dot">&#9203;</span> Scan Rider QR Code
         </div>
+
+        <!-- Camera selector — shown automatically when more than one camera is detected -->
+        <div id="camera-select-panel" style="display:none;margin-bottom:12px;">
+          <label style="font-size:12px;color:var(--gold);display:block;margin-bottom:5px;
+                        text-transform:uppercase;letter-spacing:1px;">Select Camera</label>
+          <select id="camera-select"
+                  style="width:100%;padding:10px 12px;border-radius:8px;border:none;
+                         background:var(--cream);color:var(--ink);font-size:14px;margin-bottom:8px;">
+          </select>
+          <button onclick="startScannerWithSelected()"
+                  class="btn btn-primary btn-sm" style="width:100%;margin-bottom:0;">
+            &#128247; Start Selected Camera
+          </button>
+        </div>
+
         <div id="qr-reader"></div>
-        <p class="scan-status" id="scan-status">Starting camera&hellip;</p>
-        <button id="camera-restart-btn" onclick="restartScanner()"
+        <p class="scan-status" id="scan-status">Detecting cameras&hellip;</p>
+        <button id="camera-restart-btn" onclick="showCameraSelector()"
                 style="display:none;margin-top:10px;width:100%;" class="btn btn-ghost btn-sm">
-          &#128260; Restart Camera
+          &#128260; Change Camera
         </button>
         <div class="preview" id="preview">
           <div class="preview-label">Last scanned</div>
@@ -672,6 +687,70 @@
      QR SCANNER  (html5-qrcode, with wake-from-sleep detection)
   ================================================================ */
   let lastScan=0, activeScanner=null, scannerRunning=false;
+  let selectedDeviceId=null;  // set by camera selector
+
+  /* Enumerate available cameras and show selector if more than one */
+  function loadCameraList(){
+    const statusEl=document.getElementById('scan-status');
+    if(typeof Html5Qrcode==='undefined'){
+      setCameraStatus('offline');
+      if(statusEl)statusEl.textContent='QR library not loaded. Use manual entry.';
+      return;
+    }
+    Html5Qrcode.getCameras().then(function(cameras){
+      if(!cameras||cameras.length===0){
+        if(statusEl)statusEl.textContent='No cameras detected. Use manual entry.';
+        setCameraStatus('offline');
+        return;
+      }
+      if(cameras.length===1){
+        /* Only one camera — start it automatically */
+        selectedDeviceId=cameras[0].id;
+        startScanner();
+        return;
+      }
+      /* Multiple cameras — show the selector.
+         USB cameras are typically listed AFTER built-in ones,
+         so pre-select the last camera in the list. */
+      selectedDeviceId=cameras[cameras.length-1].id;
+      const select=document.getElementById('camera-select');
+      const panel=document.getElementById('camera-select-panel');
+      select.innerHTML='';
+      cameras.forEach(function(cam,i){
+        const opt=document.createElement('option');
+        opt.value=cam.id;
+        opt.textContent=cam.label||('Camera '+(i+1));
+        if(cam.id===selectedDeviceId)opt.selected=true;
+        select.appendChild(opt);
+      });
+      select.addEventListener('change',function(){selectedDeviceId=this.value;});
+      panel.style.display='block';
+      if(statusEl)statusEl.textContent=cameras.length+' cameras found \u2014 select one above and click Start.';
+      setCameraStatus('starting');
+    }).catch(function(){
+      /* getCameras() failed (often needs permission first) — just start normally */
+      startScanner();
+    });
+  }
+
+  /* Called by the "Start Selected Camera" button */
+  function startScannerWithSelected(){
+    const select=document.getElementById('camera-select');
+    if(select)selectedDeviceId=select.value;
+    document.getElementById('camera-select-panel').style.display='none';
+    restartScanner();
+  }
+
+  /* Called by "Change Camera" button — shows selector again */
+  function showCameraSelector(){
+    const panel=document.getElementById('camera-select-panel');
+    if(panel)panel.style.display='block';
+    stopScanner().then(function(){
+      setCameraStatus('starting');
+      const statusEl=document.getElementById('scan-status');
+      if(statusEl)statusEl.textContent='Select a camera above and click Start.';
+    });
+  }
 
   function setCameraStatus(state){
     const dot=document.getElementById('camera-dot');
@@ -717,8 +796,12 @@
     setCameraStatus('starting');
     activeScanner=new Html5Qrcode('qr-reader',{verbose:false});
     const config={fps:10,qrbox:function(w,h){const m=Math.floor(Math.min(w,h)*0.72);return{width:m,height:m};},aspectRatio:1.0};
+    /* Use the selected device ID if one was chosen, otherwise fall back to environment camera */
+    const cameraConstraint=selectedDeviceId
+      ?{deviceId:{exact:selectedDeviceId}}
+      :{facingMode:'environment'};
     activeScanner.start(
-      {facingMode:'environment'},config,
+      cameraConstraint,config,
       function onSuccess(text){
         const now=Date.now();
         if(now-lastScan<2000)return;
@@ -731,7 +814,13 @@
         if(navigator.vibrate)try{navigator.vibrate([50,30,50]);}catch(e){}
       },
       function onError(){}
-    ).then(()=>{scannerRunning=true;setCameraStatus('active');})
+    ).then(()=>{
+      scannerRunning=true;
+      setCameraStatus('active');
+      /* Show Change Camera button once scanning is active */
+      const btn=document.getElementById('camera-restart-btn');
+      if(btn)btn.style.display='inline-block';
+    })
      .catch(err=>{scannerRunning=false;setCameraStatus('offline');console.warn('Scanner:',err);});
   }
 
@@ -790,7 +879,7 @@
 
   /* ---- Boot ---- */
   renderLeaderboard();
-  startScanner();
+  loadCameraList();   /* detects cameras, shows selector if >1, or starts automatically */
   </script>
 </body>
 </html>
