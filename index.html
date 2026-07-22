@@ -59,28 +59,33 @@
     </header>
 
     <div class="settings-body card-panel">
-      <label class="settings-label">Club Name</label>
-      <input id="set-club-name" type="text" class="settings-input"
-             placeholder="e.g. Willow Prairie Horse Camp" maxlength="60" />
 
-      <label class="settings-label">Poker Ride Date</label>
-      <input id="set-ride-date" type="date" class="settings-input" />
+      <label class="settings-label">Game Type</label>
+      <p class="settings-hint">
+        <strong>Club Event</strong> &mdash; riders scan a QR code at the finish-line laptop.
+        The laptop handles the draw and leaderboard.<br><br>
+        <strong>Private Ride</strong> &mdash; small group (2&ndash;6 people), no laptop needed.
+        All players share one phone and one deck. Drawing is done on the phone.
+      </p>
+      <div class="mode-toggle">
+        <button type="button" id="game-club"    class="mode-btn active">&#9824; Club Event</button>
+        <button type="button" id="game-private" class="mode-btn">&#128014; Private Ride</button>
+      </div>
 
-      <label class="settings-label">Contact Info</label>
-      <textarea id="set-contact" class="settings-input settings-textarea"
-                placeholder="Website address&#10;Contact name &amp; phone number"
-                rows="3"></textarea>
-
-      <label class="settings-label">Game Mode</label>
-      <p class="settings-hint">5 Card = standard poker &nbsp;&middot;&nbsp; 7 Card = best 5 of 7</p>
+      <label class="settings-label" style="margin-top:20px;">Number of Stations</label>
+      <p class="settings-hint">
+        <strong>5 Card</strong> &mdash; standard 5-card poker hand.<br>
+        <strong>7 Card</strong> &mdash; visit 7 stations, best 5 of 7 cards wins.
+      </p>
       <div class="mode-toggle">
         <button type="button" id="mode-5" class="mode-btn active">5 Card Poker</button>
         <button type="button" id="mode-7" class="mode-btn">7 Card Poker</button>
       </div>
 
-      <button id="save-settings-btn" class="btn btn-primary" style="margin-top:20px;">
+      <button id="save-settings-btn" class="btn btn-primary" style="margin-top:22px;">
         &#10003; Save Settings
       </button>
+
     </div>
   </section>
 
@@ -180,10 +185,11 @@
     </header>
 
     <div class="hand-stage" id="hand-stage">
-      <!-- populated by renderHand() -->
+      <!-- populated by renderHand() — different content for Club vs Private mode -->
     </div>
 
-    <div class="actions">
+    <!-- Club Event actions (shown by JS for club mode) -->
+    <div id="hand-actions-club" class="actions">
       <button class="btn btn-primary btn-xl" data-nav="scan">
         &#128247; BACK TO SCANNING
       </button>
@@ -191,6 +197,9 @@
         &#128260; Restart Ride
       </button>
     </div>
+
+    <!-- Private Ride actions are built inline by renderPrivateHand() -->
+    <div id="hand-actions-private" class="hidden"></div>
   </section>
 
 </div><!-- #app -->

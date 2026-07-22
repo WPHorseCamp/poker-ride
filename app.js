@@ -1,6 +1,6 @@
 /* =====================================================================
-   Poker Ride — app.js  v3.0
-   Elderly-friendly redesign | 5 & 7 card modes | Settings | Auto-save
+   Poker Ride — app.js  v4.0
+   Club Event mode (finish-line laptop) + Private Ride mode (phone draw)
    ===================================================================== */
 (function () {
   "use strict";
@@ -13,17 +13,17 @@
   var MAX_HANDS    = 5;
 
   /* ---- Settings ---- */
-  var settings = { clubName:"Poker Ride", rideDate:"", contact:"", stations:5 };
+  /* gameType: 'club' | 'private'
+     stations: 5 | 7                */
+  var settings = { gameType:"club", stations:5 };
 
   function loadSettings() {
     try {
       var raw = localStorage.getItem(SETTINGS_KEY);
       if (raw) {
         var s = JSON.parse(raw);
-        if (s.clubName  !== undefined) settings.clubName  = s.clubName;
-        if (s.rideDate  !== undefined) settings.rideDate  = s.rideDate;
-        if (s.contact   !== undefined) settings.contact   = s.contact;
-        if (s.stations  !== undefined) settings.stations  = +s.stations;
+        if (s.gameType !== undefined) settings.gameType = s.gameType;
+        if (s.stations !== undefined) settings.stations = +s.stations;
       }
     } catch(e) {}
   }
@@ -32,7 +32,7 @@
     try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e) {}
   }
 
-  /* ---- Stations list (computed from settings.stations) ---- */
+  /* ---- Stations ---- */
   var STATIONS = [];
   function makeStations() {
     var n = settings.stations === 7 ? 7 : 5;
@@ -41,7 +41,7 @@
     return arr;
   }
 
-  /* ---- Deck & cards ---- */
+  /* ---- Deck ---- */
   var RANKS = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
   var SUITS = [
     { s:"S", glyph:"\u2660", red:false },
@@ -61,11 +61,21 @@
   }
 
   function newPlayer(name) {
-    return { name:name||"Rider", hand:{}, deck:freshDeck() };
+    return {
+      name    : name || "Rider",
+      hand    : {},
+      deck    : freshDeck(),  /* used for Club Event mode */
+      faceDown: {},           /* Private Ride: which station cards are face-down */
+      discards: {},           /* marked for discard */
+      wasDrawn: {}            /* which stations had draw-replacement cards */
+    };
   }
 
   /* ---- State ---- */
   var state = null;
+
+  /* UI state — not persisted */
+  var cardMode = "reveal";   /* "reveal" | "discard" — active player's tap mode */
 
   function todayStr() {
     var d = new Date();
@@ -77,13 +87,23 @@
       var raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         var s = JSON.parse(raw);
-        if (s && Array.isArray(s.players) && s.players.length > 0) return s;
+        if (s && Array.isArray(s.players) && s.players.length > 0) {
+          /* Ensure new fields exist on older saves */
+          s.players.forEach(function(p) {
+            if (!p.faceDown)  p.faceDown  = {};
+            if (!p.discards)  p.discards  = {};
+            if (!p.wasDrawn)  p.wasDrawn  = {};
+          });
+          return s;
+        }
       }
       var leg = localStorage.getItem(LEGACY_KEY);
       if (leg) {
         var old = JSON.parse(leg);
         if (old && old.name && old.deck && old.hand) {
-          var m = { players:[{name:old.name,deck:old.deck,hand:old.hand}], active:0, date:todayStr() };
+          var m = { players:[newPlayer(old.name)], active:0, date:todayStr(), gameType:'club' };
+          m.players[0].hand = old.hand;
+          m.players[0].deck = old.deck;
           localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
           return m;
         }
@@ -92,7 +112,6 @@
     return null;
   }
 
-  /* Auto-save after every card drawn — survives battery death, app switching, phone calls */
   function saveState() {
     if (!state) return;
     state.date = state.date || todayStr();
@@ -128,17 +147,98 @@
     return info;
   }
 
-  /* ---- Draw logic ---- */
+  /* ================================================================
+     DRAW LOGIC
+     Club Event: each player draws from their own deck.
+     Private Ride: all players share one deck in state.sharedDeck.
+  ================================================================ */
   function drawForStation(sid) {
     var p = curPlayer();
     if (!p) return null;
-    if (p.hand[sid]) return p.hand[sid];
-    if (!p.deck || p.deck.length === 0) return null;
-    var idx  = Math.floor(Math.random() * p.deck.length);
-    var card = p.deck.splice(idx, 1)[0];
+    if (p.hand[sid]) return p.hand[sid];  /* already drawn — return same card */
+
+    var card;
+    var isPrivate = state && state.gameType === "private";
+
+    if (isPrivate) {
+      /* Shared deck — auto-reshuffle if empty */
+      if (!state.sharedDeck || state.sharedDeck.length === 0) {
+        state.sharedDeck = freshDeck();
+        toast("Deck reshuffled \u2014 52 fresh cards!");
+      }
+      var idx = Math.floor(Math.random() * state.sharedDeck.length);
+      card = state.sharedDeck.splice(idx, 1)[0];
+      /* Card starts face-down on the hand screen in private mode */
+      if (!p.faceDown) p.faceDown = {};
+      p.faceDown[sid] = true;
+    } else {
+      /* Club Event: own deck */
+      if (!p.deck || p.deck.length === 0) return null;
+      var idx = Math.floor(Math.random() * p.deck.length);
+      card = p.deck.splice(idx, 1)[0];
+    }
+
     p.hand[sid] = card;
-    saveState();   /* <-- auto-save immediately on every draw */
+    saveState();   /* auto-save on every draw */
     return card;
+  }
+
+  /* Private Ride: execute draw on the phone (replaces marked discards) */
+  function executePrivateDraw(player) {
+    if (!player.discards || Object.keys(player.discards).length === 0) return;
+    if (!state.sharedDeck || state.sharedDeck.length === 0) {
+      state.sharedDeck = freshDeck();
+      toast("Deck reshuffled!");
+    }
+    Object.keys(player.discards).forEach(function(sid) {
+      if (!state.sharedDeck || state.sharedDeck.length === 0) {
+        state.sharedDeck = freshDeck();
+      }
+      var idx = Math.floor(Math.random() * state.sharedDeck.length);
+      var newCard = state.sharedDeck.splice(idx, 1)[0];
+      player.hand[sid]    = newCard;
+      player.wasDrawn[sid]= true;
+      player.faceDown[sid]= true;   /* new card arrives face-down */
+      delete player.discards[sid];
+    });
+    cardMode = "reveal";   /* switch back to reveal mode after draw */
+    saveState();
+    renderHand();
+  }
+
+  /* Toggle a card's face-down state (Private Ride reveal mode) */
+  function toggleFaceDown(player, sid) {
+    if (!player.faceDown) player.faceDown = {};
+    if (player.faceDown[sid]) delete player.faceDown[sid];
+    else player.faceDown[sid] = true;
+    saveState();
+    renderHand();
+  }
+
+  /* Toggle a card's discard mark */
+  function toggleDiscard(player, sid, maxAllowed) {
+    if (!player.discards) player.discards = {};
+    if (player.discards[sid]) {
+      delete player.discards[sid];
+    } else {
+      var count = Object.keys(player.discards).length;
+      if (count >= maxAllowed) {
+        toast("Max " + maxAllowed + " discard" + (maxAllowed !== 1 ? "s" : "") + " allowed.");
+        return;
+      }
+      player.discards[sid] = true;
+    }
+    saveState();
+    renderHand();
+  }
+
+  /* End game — reveal all, show ranking */
+  function endGame() {
+    if (!confirm("Reveal all cards and show the final ranking?")) return;
+    state.gameEnded = true;
+    state.players.forEach(function(p) { p.faceDown = {}; });
+    saveState();
+    renderHand();
   }
 
   /* ================================================================
@@ -154,48 +254,46 @@
     var suits = cards.map(function(c){ return c.s; });
     var counts = {};
     vals.forEach(function(v){ counts[v]=(counts[v]||0)+1; });
-    var groups = Object.keys(counts).map(function(k){ return {val:+k, cnt:counts[k]}; })
-                     .sort(function(a,b){ return b.cnt-a.cnt||b.val-a.val; });
+    var groups = Object.keys(counts).map(function(k){ return {val:+k,cnt:counts[k]}; })
+                       .sort(function(a,b){ return b.cnt-a.cnt||b.val-a.val; });
     var isFlush = suits.every(function(s){ return s===suits[0]; });
     var uniq = Object.keys(counts).map(Number).sort(function(a,b){ return a-b; });
-    var isStraight = false, straightHigh = vals[4];
-    if (uniq.length === 5) {
+    var isStraight=false, straightHigh=vals[4];
+    if (uniq.length===5) {
       if (uniq[4]-uniq[0]===4) { isStraight=true; straightHigh=uniq[4]; }
       if (uniq[0]===2&&uniq[1]===3&&uniq[2]===4&&uniq[3]===5&&uniq[4]===14)
         { isStraight=true; straightHigh=5; }
     }
     var hi = vals.slice().reverse();
-    if (isStraight&&isFlush) return [8, straightHigh];
-    if (groups[0].cnt===4)   return [7, groups[0].val, groups[1]?groups[1].val:0];
-    if (groups[0].cnt===3&&groups[1]&&groups[1].cnt===2) return [6, groups[0].val, groups[1].val];
+    if (isStraight&&isFlush) return [8,straightHigh];
+    if (groups[0].cnt===4)   return [7,groups[0].val,groups[1]?groups[1].val:0];
+    if (groups[0].cnt===3&&groups[1]&&groups[1].cnt===2) return [6,groups[0].val,groups[1].val];
     if (isFlush)    return [5].concat(hi);
-    if (isStraight) return [4, straightHigh];
-    if (groups[0].cnt===3) return [3, groups[0].val, groups[1]?groups[1].val:0, groups[2]?groups[2].val:0];
+    if (isStraight) return [4,straightHigh];
+    if (groups[0].cnt===3) return [3,groups[0].val,groups[1]?groups[1].val:0,groups[2]?groups[2].val:0];
     if (groups[0].cnt===2&&groups[1]&&groups[1].cnt===2) {
-      var p1=Math.max(groups[0].val,groups[1].val), p2=Math.min(groups[0].val,groups[1].val);
-      return [2, p1, p2, groups[2]?groups[2].val:0];
+      var p1=Math.max(groups[0].val,groups[1].val),p2=Math.min(groups[0].val,groups[1].val);
+      return [2,p1,p2,groups[2]?groups[2].val:0];
     }
     if (groups[0].cnt===2) {
-      var kickers = groups.slice(1).map(function(g){ return g.val; }).sort(function(a,b){ return b-a; });
-      return [1, groups[0].val].concat(kickers);
+      var kickers=groups.slice(1).map(function(g){return g.val;}).sort(function(a,b){return b-a;});
+      return [1,groups[0].val].concat(kickers);
     }
     return [0].concat(hi);
   }
 
-  function compareScore(a, b) {
-    for (var i = 0; i < Math.max(a.length, b.length); i++) {
-      var diff = (a[i]||0) - (b[i]||0);
-      if (diff !== 0) return diff;
+  function compareScore(a,b) {
+    for (var i=0;i<Math.max(a.length,b.length);i++) {
+      var diff=(a[i]||0)-(b[i]||0); if(diff!==0) return diff;
     }
     return 0;
   }
 
-  /* Best 5 of 7 (for 7-card high hand) */
   function bestFiveOf(cards) {
-    if (cards.length <= 5) return { hand:cards, indices:[0,1,2,3,4] };
+    if (cards.length<=5) return { hand:cards, indices:[0,1,2,3,4] };
     var best=null, bestScore=null, bestIdx=null;
-    for (var i = 0; i < cards.length-1; i++) {
-      for (var j = i+1; j < cards.length; j++) {
+    for (var i=0;i<cards.length-1;i++) {
+      for (var j=i+1;j<cards.length;j++) {
         var idx=[], hand=[];
         for (var k=0;k<cards.length;k++) { if(k!==i&&k!==j){idx.push(k);hand.push(cards[k]);} }
         var score=scoreHand5(hand);
@@ -205,28 +303,24 @@
     return { hand:best, indices:bestIdx, score:bestScore };
   }
 
-  var HAND_NAMES = ['High Card','One Pair','Two Pair','Three of a Kind',
-    'Straight','Flush','Full House','Four of a Kind','Straight Flush'];
-  var HAND_DESCS = [
-    'Highest card plays','Two matching ranks','Two separate pairs',
-    'Three matching ranks','Five cards in a row','Five cards of one suit',
-    'Three of a kind plus a pair','Four matching ranks','Five in a row, same suit'];
+  var HAND_NAMES=["High Card","One Pair","Two Pair","Three of a Kind",
+    "Straight","Flush","Full House","Four of a Kind","Straight Flush"];
+  var HAND_DESCS=["Highest card plays","Two matching ranks","Two separate pairs",
+    "Three matching ranks","Five cards in a row","Five cards of one suit",
+    "Three of a kind plus a pair","Four matching ranks","Five in a row, same suit"];
 
   function evaluateHand(cards) {
-    if (!cards||!cards.length) return { name:"No cards yet", desc:"", rank:-1, score:[0] };
-    var filled = cards.filter(Boolean);
-    if (filled.length < 5) return { name:filled.length+" cards drawn",
+    if (!cards||!cards.length) return { name:"No cards yet",desc:"",rank:-1,score:[0] };
+    var filled=cards.filter(Boolean);
+    if (filled.length<5) return { name:filled.length+" cards drawn",
       desc:"Visit "+(STATIONS.length-filled.length)+" more station"+(STATIONS.length-filled.length!==1?"s":""),
-      rank:-1, score:[0] };
-    var score = scoreHand5(filled);
-    var isRoyal = score[0]===8 && score[1]===14;
-    return {
-      name: isRoyal ? 'Royal Flush! \uD83D\uDC51' : HAND_NAMES[score[0]],
-      desc: HAND_DESCS[score[0]], rank:score[0], score:score
-    };
+      rank:-1,score:[0] };
+    var score=scoreHand5(filled);
+    var isRoyal=score[0]===8&&score[1]===14;
+    return { name:isRoyal?"Royal Flush! \uD83D\uDC51":HAND_NAMES[score[0]],
+             desc:HAND_DESCS[score[0]], rank:score[0], score:score };
   }
 
-  /* Max draw cards allowed based on hand strength */
   function maxDiscards(handResult) {
     if (!handResult||handResult.rank<0) return 0;
     if (handResult.rank===0) return 3;
@@ -235,62 +329,49 @@
     return 0;
   }
 
-  /* Toggle a card's discard mark — called when rider taps a card */
-  function toggleDiscard(player, sid, maxAllowed) {
-    if (!player.discards) player.discards = {};
-    if (player.discards[sid]) {
-      delete player.discards[sid];               /* unmark */
-    } else {
-      var count = Object.keys(player.discards).length;
-      if (count >= maxAllowed) {
-        toast("Max "+maxAllowed+" discard"+(maxAllowed!==1?"s":"")+" allowed for this hand.");
-        return;
-      }
-      player.discards[sid] = true;               /* mark */
-    }
-    saveState();
-    renderHand();                                /* re-render to update QR + visuals */
+  function playerScore(p) {
+    var filled=STATIONS.map(function(s){return p.hand[s]||null;}).filter(Boolean);
+    if (filled.length<5) return [0];
+    var evalCards=(STATIONS.length===7&&filled.length===7)?bestFiveOf(filled).hand:filled;
+    return scoreHand5(evalCards);
   }
 
   /* ================================================================
      SCREEN ROUTING
   ================================================================ */
-  var current = "start";
+  var current="start";
 
   function show(name) {
-    if (current==="scan" && name!=="scan") stopScanner();
-    document.querySelectorAll(".screen").forEach(function(s) {
-      s.classList.toggle("active", s.id==="screen-"+name);
+    if (current==="scan"&&name!=="scan") stopScanner();
+    document.querySelectorAll(".screen").forEach(function(s){
+      s.classList.toggle("active",s.id==="screen-"+name);
     });
-    current = name;
+    current=name;
     if (name==="start")    updateStartScreen();
     if (name==="scan")     { buildPlayerTabs(); startScanner(); updateHandStrip(); }
     if (name==="card")     updateHandStrip();
-    if (name==="hand")     renderHand();
+    if (name==="hand")     { cardMode="reveal"; renderHand(); }
     if (name==="settings") populateSettings();
-    window.scrollTo(0, 0);
+    window.scrollTo(0,0);
   }
 
   /* ================================================================
      START SCREEN
   ================================================================ */
   function updateStartScreen() {
-    var el;
-    el = document.getElementById("club-name-display");
-    if (el) el.textContent = settings.clubName || "Poker Ride";
-    el = document.getElementById("ride-date-display");
-    if (el) { el.textContent = settings.rideDate||""; el.style.display=settings.rideDate?"":"none"; }
+    var el=document.getElementById("club-name-display");
+    if (el) el.textContent=settings.gameType==="private"?"\uD83D\uDC0E Private Ride":"♠ Club Event";
 
-    var saved = loadState();
-    var resumeBtn = document.getElementById("resume-btn");
-    if (saved && saved.players && saved.players.length>0) {
-      state = saved;
-      var names = saved.players.map(function(p){return p.name;}).join(", ");
-      var drawn = saved.players.reduce(function(acc,p){return acc+drawnCountFor(p);},0);
-      var total = saved.players.length * STATIONS.length;
-      var isToday = saved.date === todayStr();
-      resumeBtn.textContent = "\u25B6  " + (isToday?"Resume Today":"Resume Previous") +
-        "  \u2014  " + names + "  (" + drawn + "/" + total + ")";
+    var saved=loadState();
+    var resumeBtn=document.getElementById("resume-btn");
+    if (saved&&saved.players&&saved.players.length>0) {
+      state=saved;
+      var names=saved.players.map(function(p){return p.name;}).join(", ");
+      var drawn=saved.players.reduce(function(acc,p){return acc+drawnCountFor(p);},0);
+      var total=saved.players.length*STATIONS.length;
+      var isToday=saved.date===todayStr();
+      resumeBtn.textContent="\u25B6  "+(isToday?"Resume Today":"Resume Previous")+
+        "  \u2014  "+names+"  ("+drawn+"/"+total+")";
       resumeBtn.classList.remove("hidden");
     } else {
       resumeBtn.classList.add("hidden");
@@ -298,25 +379,22 @@
   }
 
   /* ================================================================
-     SETTINGS SCREEN
+     SETTINGS SCREEN  (simplified — just game type and stations)
   ================================================================ */
   function populateSettings() {
-    var el;
-    el=document.getElementById("set-club-name"); if(el) el.value=settings.clubName||"";
-    el=document.getElementById("set-ride-date"); if(el) el.value=settings.rideDate||"";
-    el=document.getElementById("set-contact");   if(el) el.value=settings.contact||"";
-    var s5=document.getElementById("mode-5"),s7=document.getElementById("mode-7");
-    if(s5) s5.classList.toggle("active",settings.stations===5);
-    if(s7) s7.classList.toggle("active",settings.stations===7);
+    var gc=document.getElementById("game-club");
+    var gp=document.getElementById("game-private");
+    if (gc) gc.classList.toggle("active",settings.gameType==="club");
+    if (gp) gp.classList.toggle("active",settings.gameType==="private");
+    var m5=document.getElementById("mode-5");
+    var m7=document.getElementById("mode-7");
+    if (m5) m5.classList.toggle("active",settings.stations===5);
+    if (m7) m7.classList.toggle("active",settings.stations===7);
   }
 
   function saveSettingsFromForm() {
-    var el;
-    el=document.getElementById("set-club-name"); if(el) settings.clubName=el.value.trim()||"Poker Ride";
-    el=document.getElementById("set-ride-date"); if(el) settings.rideDate=el.value;
-    el=document.getElementById("set-contact");   if(el) settings.contact=el.value.trim();
     saveSettings();
-    STATIONS = makeStations();
+    STATIONS=makeStations();
     buildManual();
     toast("Settings saved!");
     show("start");
@@ -326,61 +404,56 @@
      PLAYER TABS
   ================================================================ */
   function buildPlayerTabs() {
-    var container = document.getElementById("player-tabs");
+    var container=document.getElementById("player-tabs");
     if (!container||!state) return;
-    container.innerHTML = "";
-    if (state.players.length<=1) { container.classList.add("hidden"); updateScanTitle(); return; }
+    container.innerHTML="";
+    if (state.players.length<=1){container.classList.add("hidden");updateScanTitle();return;}
     container.classList.remove("hidden");
-    state.players.forEach(function(p, i) {
-      var btn = document.createElement("button");
+    state.players.forEach(function(p,i){
+      var btn=document.createElement("button");
       btn.type="button";
       var cnt=drawnCountFor(p);
-      btn.textContent = p.name+(cnt===STATIONS.length?" \u2713":" ("+cnt+"/"+STATIONS.length+")");
-      btn.className = "player-tab"+(i===state.active?" active":"");
-      btn.addEventListener("click", function() {
+      btn.textContent=p.name+(cnt===STATIONS.length?" \u2713":" ("+cnt+"/"+STATIONS.length+")");
+      btn.className="player-tab"+(i===state.active?" active":"");
+      btn.addEventListener("click",function(){
         state.active=i; saveState(); buildPlayerTabs(); refreshManual(); updateScanTitle(); updateHandStrip();
         var done=drawnCount()===STATIONS.length;
         var st=document.getElementById("scan-status");
-        if (done) {
-          if(st) st.textContent=p.name+" has all "+STATIONS.length+" cards! Tap VIEW MY HAND.";
-          showCameraOverlay(false); setManualVisible(true);
-        } else {
-          if(st) st.textContent="Tap the button above to open your camera.";
-          showCameraOverlay(true); setManualVisible(false);
-        }
+        if (done){if(st)st.textContent=p.name+" has all "+STATIONS.length+" cards! Tap VIEW MY HAND.";showCameraOverlay(false);setManualVisible(true);}
+        else {if(st)st.textContent="Tap the button above to open your camera.";showCameraOverlay(true);setManualVisible(false);}
       });
       container.appendChild(btn);
     });
     updateScanTitle();
   }
 
-  function updateScanTitle() {
+  function updateScanTitle(){
     var title=document.getElementById("scan-topbar-title");
     if (!title||!state) return;
-    title.textContent=(state.players.length>1&&curPlayer())
-      ? curPlayer().name+"'s Turn" : "Scan Station";
+    title.textContent=(state.players.length>1&&curPlayer())?curPlayer().name+"'s Turn":"Scan Station";
   }
 
   /* ================================================================
-     HAND STRIP  (mini cards visible on scan and card screens)
+     HAND STRIP  (mini cards on scan and card screens)
   ================================================================ */
-  function updateHandStrip() {
-    ["hand-strip","hand-strip-card"].forEach(function(stripId) {
-      var strip=document.getElementById(stripId);
+  function updateHandStrip(){
+    ["hand-strip","hand-strip-card"].forEach(function(id){
+      var strip=document.getElementById(id);
       if (!strip) return;
-      if (!state) { strip.innerHTML=""; return; }
-      var p=curPlayer();
-      strip.innerHTML="";
-      STATIONS.forEach(function(s) {
+      if (!state){strip.innerHTML="";return;}
+      var p=curPlayer(); strip.innerHTML="";
+      STATIONS.forEach(function(s){
         var card=p&&p.hand[s];
         var mc=document.createElement("div");
-        if (card) {
+        var isFD=state.gameType==="private"&&p&&p.faceDown&&p.faceDown[s];
+        if (card&&isFD) {
+          mc.className="strip-card face-down"; mc.textContent="?";
+        } else if (card) {
           var suit=SUIT_MAP[card.s];
           mc.className="strip-card"+(suit.red?" red":"");
           mc.innerHTML="<span class='strip-rank'>"+card.r+"</span><span class='strip-suit'>"+suit.glyph+"</span>";
         } else {
-          mc.className="strip-card empty";
-          mc.textContent=s;
+          mc.className="strip-card empty"; mc.textContent=s;
         }
         strip.appendChild(mc);
       });
@@ -388,100 +461,87 @@
   }
 
   /* ================================================================
-     CARD SCREEN
+     CARD SCREEN  (station reveal — always face-up)
   ================================================================ */
-  function renderCard(sid, card) {
+  function renderCard(sid,card){
     var suit=SUIT_MAP[card.s];
     var p=curPlayer();
     var titleEl=document.getElementById("card-station-title");
     if (titleEl) titleEl.textContent=(state&&state.players.length>1&&p)
-      ? p.name+" \u2014 Station "+sid.replace(/^S/i,"")
-      : "Station "+sid.replace(/^S/i,"");
-
+      ?p.name+" \u2014 Station "+sid.replace(/^S/i,"")
+      :"Station "+sid.replace(/^S/i,"");
     var el=document.getElementById("playing-card");
     el.classList.toggle("red",suit.red);
     el.querySelector(".pc-suit-big").textContent=suit.glyph;
     var ranks=el.querySelectorAll(".pc-rank");
     ranks[0].textContent=card.r; ranks[1].textContent=card.r;
     el.style.animation="none"; void el.offsetWidth; el.style.animation="";
-
     var cap=document.getElementById("card-caption");
     if (cap) cap.textContent=cardName(card)+" of "+suitName(card.s);
-
     var n=drawnCount();
     var prog=document.getElementById("card-progress");
-    if (prog) prog.textContent=n+" of "+STATIONS.length+" stations visited"+
-      (n===STATIONS.length?" \u2014 ALL DONE! Tap VIEW MY HAND.":"");
-
+    if (prog) {
+      var msg=n+" of "+STATIONS.length+" stations visited";
+      if (n===STATIONS.length) msg+=" \u2014 All done! Tap VIEW MY HAND.";
+      else if (state.gameType==="private") msg+=" \u2014 Card will be face-down on your hand screen";
+      prog.textContent=msg;
+    }
     updateHandStrip();
   }
 
-  function cardName(c){ return {J:"Jack",Q:"Queen",K:"King",A:"Ace"}[c.r]||c.r; }
-  function suitName(s){ return {S:"Spades",H:"Hearts",D:"Diamonds",C:"Clubs"}[s]; }
+  function cardName(c){return{J:"Jack",Q:"Queen",K:"King",A:"Ace"}[c.r]||c.r;}
+  function suitName(s){return{S:"Spades",H:"Hearts",D:"Diamonds",C:"Clubs"}[s];}
 
   /* ================================================================
-     HAND SCREEN
+     HAND SCREEN — branches on game type
   ================================================================ */
-  function renderHand() {
+  function renderHand(){
+    if (state&&state.gameType==="private") renderPrivateHand();
+    else renderClubHand();
+  }
+
+  /* ---- Club Event hand screen (QR code, finish-line laptop) ---- */
+  function renderClubHand(){
     var stage=document.getElementById("hand-stage");
     if (!stage||!state) return;
     stage.innerHTML="";
     var multi=state.players.length>1;
     var is7=STATIONS.length===7;
 
-    state.players.forEach(function(p, idx) {
+    state.players.forEach(function(p,idx){
       var allCards=STATIONS.map(function(s){return p.hand[s]||null;});
       var filled=allCards.filter(Boolean);
       var bestResult=null, bestIndices=[];
-      if (is7&&filled.length===7) { bestResult=bestFiveOf(filled); bestIndices=bestResult.indices; }
+      if (is7&&filled.length===7){bestResult=bestFiveOf(filled);bestIndices=bestResult.indices;}
 
       var section=document.createElement("div");
       section.className="hand-player-section";
-
-      if (multi) {
-        var nameEl=document.createElement("p");
-        nameEl.className="hand-rider";nameEl.textContent=p.name;
-        section.appendChild(nameEl);
-      }
+      if (multi){var ne=document.createElement("p");ne.className="hand-rider";ne.textContent=p.name;section.appendChild(ne);}
 
       var evalCards=(is7&&filled.length===7)?bestResult.hand:filled;
       var res=evaluateHand(evalCards);
       var maxD=maxDiscards(res);
 
-      var cardsDiv=document.createElement("div");
-      cardsDiv.className="hand-cards";
-      var markedCount = 0;
-      if (p.discards) {
-        STATIONS.forEach(function(s){ if(p.discards[s]) markedCount++; });
-      }
-
-      allCards.forEach(function(card, ci) {
+      var cardsDiv=document.createElement("div"); cardsDiv.className="hand-cards";
+      var markedCount=p.discards?Object.keys(p.discards).length:0;
+      allCards.forEach(function(card,ci){
         var mc=document.createElement("div");
         var sid=STATIONS[ci];
-        var isDiscarded = p.discards && p.discards[sid];
+        var isDiscarded=p.discards&&p.discards[sid];
         var isInBest=!is7||filled.length<7||bestIndices.indexOf(ci)>=0;
-        if (card) {
+        if (card){
           var suit=SUIT_MAP[card.s];
-          mc.className="mini-card"+(suit.red?" red":"")+
-            (isDiscarded?" discard-marked":"")+
-            (!isInBest&&!isDiscarded?" dim":"");
-          if (isDiscarded) {
-            mc.innerHTML="<span class='discard-x'>\u2715</span>"+
-                         "<span class='mini-rank-sm'>"+card.r+"</span>"+
-                         "<span class='mini-suit-sm'>"+suit.glyph+"</span>"+
-                         "<span class='mini-station'>"+sid+"</span>";
+          mc.className="mini-card"+(suit.red?" red":"")+(isDiscarded?" discard-marked":"")+(!isInBest&&!isDiscarded?" dim":"");
+          if (isDiscarded){
+            mc.innerHTML="<span class='discard-x'>\u2715</span><span class='mini-rank-sm'>"+card.r+"</span>"+
+              "<span class='mini-suit-sm'>"+suit.glyph+"</span><span class='mini-station'>"+sid+"</span>";
           } else {
-            mc.innerHTML="<span class='mini-rank'>"+card.r+"</span>"+
-                         "<span class='mini-suit'>"+suit.glyph+"</span>"+
-                         "<span class='mini-station'>"+sid+"</span>";
+            mc.innerHTML="<span class='mini-rank'>"+card.r+"</span><span class='mini-suit'>"+suit.glyph+"</span><span class='mini-station'>"+sid+"</span>";
           }
-          /* Make tappable only when hand is complete and discards are allowed */
-          if (filled.length===STATIONS.length && maxD>0) {
+          if (filled.length===STATIONS.length&&maxD>0){
             mc.classList.add("tappable");
-            mc.title = isDiscarded ? "Tap to KEEP this card" : "Tap to DISCARD this card";
-            (function(playerRef, stationId, maxAllowed){
-              mc.addEventListener("click", function(){ toggleDiscard(playerRef, stationId, maxAllowed); });
-            })(p, sid, maxD);
+            mc.title=isDiscarded?"Tap to KEEP this card":"Tap to DISCARD this card";
+            (function(pr,st,mx){mc.addEventListener("click",function(){toggleDiscard(pr,st,mx);});})(p,sid,maxD);
           }
         } else {
           mc.className="mini-card empty";
@@ -491,80 +551,349 @@
       });
       section.appendChild(cardsDiv);
 
-      var evalCards=(is7&&filled.length===7)?bestResult.hand:filled;
-      var res=evaluateHand(evalCards);
-      var rankDiv=document.createElement("div");
-      rankDiv.className="hand-rank";
+      var rankDiv=document.createElement("div"); rankDiv.className="hand-rank";
       rankDiv.innerHTML="<div class='rank-name'>"+res.name+"</div><div class='rank-desc'>"+res.desc+"</div>";
-      if (is7&&filled.length===7)
-        rankDiv.innerHTML+="<div class='rank-note'>\u2605 Best 5 of 7 \u2014 highlighted above</div>";
+      if (is7&&filled.length===7) rankDiv.innerHTML+="<div class='rank-note'>\u2605 Best 5 of 7 above</div>";
       section.appendChild(rankDiv);
 
-      /* Discard instruction — only shown when hand is complete and draw is allowed */
-      if (filled.length===STATIONS.length && maxD>0) {
-        var discardInstr = document.createElement("p");
-        discardInstr.className = "discard-instr";
-        if (markedCount === 0) {
-          discardInstr.innerHTML = "Tap cards to mark for discard <em>(up to "+maxD+")</em><br>" +
-            "<small>Or go straight to the finish line — discarding is optional</small>";
-        } else {
-          discardInstr.innerHTML = "<strong>"+markedCount+"</strong> card"+(markedCount!==1?"s":"")+" marked \u2014 "+
-            (maxD-markedCount>0 ? "tap more or " : "") +
-            "show your QR at the finish line";
-        }
-        section.appendChild(discardInstr);
+      if (filled.length===STATIONS.length&&maxD>0){
+        var di=document.createElement("p"); di.className="discard-instr";
+        di.innerHTML=markedCount===0
+          ?"Tap cards to mark for discard <em>(up to "+maxD+")</em><br><small>Optional \u2014 or go straight to the finish line</small>"
+          :"<strong>"+markedCount+"</strong> marked \u2014 show your QR at the finish line";
+        section.appendChild(di);
       }
-      /* QR code — shown when all stations are complete */
-      if (filled.length===STATIONS.length) {
-        var qrSec=document.createElement("div");qrSec.className="hand-qr-section";
-        var qrLbl=document.createElement("p");qrLbl.className="qr-label";
+
+      if (filled.length===STATIONS.length){
+        var qrSec=document.createElement("div"); qrSec.className="hand-qr-section";
+        var qrLbl=document.createElement("p"); qrLbl.className="qr-label";
         qrLbl.textContent="\uD83D\uDCF1 Show this QR at the finish line";
-        var qrDiv=document.createElement("div");qrDiv.className="hand-qr";
-        qrSec.appendChild(qrLbl);qrSec.appendChild(qrDiv);
+        var qrDiv=document.createElement("div"); qrDiv.className="hand-qr";
+        qrSec.appendChild(qrLbl); qrSec.appendChild(qrDiv);
         section.appendChild(qrSec);
         renderHandQR(p,qrDiv);
       }
 
       stage.appendChild(section);
-      if (multi&&idx<state.players.length-1){
-        var hr=document.createElement("hr");hr.className="player-divider";stage.appendChild(hr);
-      }
+      if (multi&&idx<state.players.length-1){var hr=document.createElement("hr");hr.className="player-divider";stage.appendChild(hr);}
     });
 
     var n=getRestartInfo().count;
-    var rs=document.createElement("p");
-    rs.className="hand-restarts"+(n>0?" flag":"");
+    var rs=document.createElement("p"); rs.className="hand-restarts"+(n>0?" flag":"");
     rs.textContent=n===0?"Restarts today: 0":"⚠ Ride restarted "+n+(n===1?" time today":" times today");
     stage.appendChild(rs);
+
+    /* Show club actions, hide private actions */
+    var ca=document.getElementById("hand-actions-club");
+    var pa=document.getElementById("hand-actions-private");
+    if (ca) ca.classList.remove("hidden");
+    if (pa) pa.classList.add("hidden");
+  }
+
+  /* ---- Private Ride hand screen ---- */
+  function renderPrivateHand(){
+    var stage=document.getElementById("hand-stage");
+    if (!stage||!state) return;
+    stage.innerHTML="";
+
+    /* Show club actions as hidden, private actions visible */
+    var ca=document.getElementById("hand-actions-club");
+    var pa=document.getElementById("hand-actions-private");
+    if (ca) ca.classList.add("hidden");
+    if (pa) pa.classList.add("hidden"); /* actions built inline below */
+
+    /* ---- END GAME results screen ---- */
+    if (state.gameEnded) {
+      renderEndGame(stage);
+      return;
+    }
+
+    var p=curPlayer();
+    var is7=STATIONS.length===7;
+    var allCards=STATIONS.map(function(s){return p.hand[s]||null;});
+    var filled=allCards.filter(Boolean);
+    var bestResult=null, bestIndices=[];
+    if (is7&&filled.length===7){bestResult=bestFiveOf(filled);bestIndices=bestResult.indices;}
+    var evalCards=(is7&&filled.length===7)?bestResult.hand:filled;
+    var res=evaluateHand(evalCards);
+    var maxD=(filled.length===STATIONS.length)?maxDiscards(res):0;
+    var markedCount=p.discards?Object.keys(p.discards).length:0;
+
+    /* ---- TOP: Other players (small) ---- */
+    if (state.players.length>1) {
+      var otherStrip=document.createElement("div");
+      otherStrip.className="other-players-strip";
+
+      state.players.forEach(function(op,oi){
+        if (oi===state.active) return;
+        var row=document.createElement("div");
+        row.className="other-player-row";
+
+        /* Name — tappable to make this person active */
+        var nameBtn=document.createElement("button");
+        nameBtn.type="button"; nameBtn.className="other-player-name-btn";
+        nameBtn.textContent=op.name;
+        (function(playerIdx){
+          nameBtn.addEventListener("click",function(){
+            state.active=playerIdx; cardMode="reveal"; saveState(); renderHand();
+          });
+        })(oi);
+        row.appendChild(nameBtn);
+
+        /* Mini cards (small, display only) */
+        var miniCards=document.createElement("div"); miniCards.className="other-player-cards";
+        STATIONS.forEach(function(sid){
+          var card=op.hand[sid];
+          var isFD=op.faceDown&&op.faceDown[sid];
+          var mc=document.createElement("div");
+          if (!card){
+            mc.className="mini-card-xs empty"; mc.textContent=sid;
+          } else if (isFD){
+            mc.className="mini-card-xs face-down"; mc.textContent="?";
+          } else {
+            var suit=SUIT_MAP[card.s];
+            mc.className="mini-card-xs"+(suit.red?" red":"")+(op.wasDrawn&&op.wasDrawn[sid]?" was-drawn":"");
+            mc.innerHTML="<span>"+card.r+"</span><span>"+suit.glyph+"</span>";
+          }
+          miniCards.appendChild(mc);
+        });
+        row.appendChild(miniCards);
+
+        otherStrip.appendChild(row);
+      });
+
+      stage.appendChild(otherStrip);
+    }
+
+    /* ---- BOTTOM: Active player (large) ---- */
+    var activeSection=document.createElement("div");
+    activeSection.className="active-player-section";
+
+    /* Player name */
+    var nameEl=document.createElement("p");
+    nameEl.className="active-player-name"; nameEl.textContent=p.name;
+    activeSection.appendChild(nameEl);
+
+    /* Mode toggle — only show CHOOSE DISCARD if hand complete and draws available */
+    if (filled.length===STATIONS.length&&maxD>0){
+      var modeRow=document.createElement("div"); modeRow.className="mode-toggle-row";
+
+      var revBtn=document.createElement("button");
+      revBtn.type="button"; revBtn.className="mode-toggle-btn"+(cardMode==="reveal"?" mode-reveal-active":"");
+      revBtn.innerHTML="\uD83D\uDC41 REVEAL / HIDE";
+      revBtn.addEventListener("click",function(){cardMode="reveal";renderHand();});
+      modeRow.appendChild(revBtn);
+
+      var discBtn=document.createElement("button");
+      discBtn.type="button"; discBtn.className="mode-toggle-btn"+(cardMode==="discard"?" mode-discard-active":"");
+      discBtn.innerHTML="\u2715 CHOOSE DISCARD";
+      discBtn.addEventListener("click",function(){cardMode="discard";renderHand();});
+      modeRow.appendChild(discBtn);
+      activeSection.appendChild(modeRow);
+    }
+
+    /* Active player cards (larger, tappable) */
+    var cardsDiv=document.createElement("div"); cardsDiv.className="active-player-cards";
+    allCards.forEach(function(card,ci){
+      var sid=STATIONS[ci];
+      var isFD=p.faceDown&&p.faceDown[sid];
+      var isDiscarded=p.discards&&p.discards[sid];
+      var isInBest=!is7||filled.length<7||bestIndices.indexOf(ci)>=0;
+      var mc=document.createElement("div");
+
+      if (!card){
+        mc.className="active-card empty"; mc.textContent=sid;
+      } else if (cardMode==="reveal"){
+        if (isFD){
+          mc.className="active-card face-down";
+          mc.innerHTML="<span class='fd-q'>?</span><span class='active-station'>"+sid+"</span>";
+        } else {
+          var suit=SUIT_MAP[card.s];
+          mc.className="active-card"+(suit.red?" red":"")+(p.wasDrawn&&p.wasDrawn[sid]?" was-drawn":"")+(isInBest?"":" dim");
+          mc.innerHTML="<span class='active-rank'>"+card.r+"</span><span class='active-suit'>"+suit.glyph+"</span><span class='active-station'>"+sid+"</span>";
+        }
+        mc.title=isFD?"Tap to reveal":"Tap to hide";
+        (function(pr,st){mc.addEventListener("click",function(){toggleFaceDown(pr,st);});})(p,sid);
+      } else {
+        /* Discard mode */
+        if (isDiscarded){
+          var suit=SUIT_MAP[card.s];
+          mc.className="active-card discard-marked";
+          mc.innerHTML="<span class='discard-x-big'>\u2715</span><span class='active-rank-sm'>"+card.r+suit.glyph+"</span><span class='active-station'>"+sid+"</span>";
+        } else {
+          if (isFD){
+            mc.className="active-card face-down";
+            mc.innerHTML="<span class='fd-q'>?</span><span class='active-station'>"+sid+"</span>";
+          } else {
+            var suit=SUIT_MAP[card.s];
+            mc.className="active-card"+(suit.red?" red":"")+(isInBest?"":" dim");
+            mc.innerHTML="<span class='active-rank'>"+card.r+"</span><span class='active-suit'>"+suit.glyph+"</span><span class='active-station'>"+sid+"</span>";
+          }
+          mc.title="Tap to mark for DISCARD";
+        }
+        if (card) {
+          mc.classList.add("tappable");
+          (function(pr,st,mx){mc.addEventListener("click",function(){toggleDiscard(pr,st,mx);});})(p,sid,maxD);
+        }
+      }
+      cardsDiv.appendChild(mc);
+    });
+    activeSection.appendChild(cardsDiv);
+
+    /* Hand rank (based on fully evaluated hand) */
+    if (res.rank>=0){
+      var rankDiv=document.createElement("div"); rankDiv.className="hand-rank";
+      rankDiv.innerHTML="<div class='rank-name'>"+res.name+"</div><div class='rank-desc'>"+res.desc+"</div>";
+      if (is7&&filled.length===7) rankDiv.innerHTML+="<div class='rank-note'>\u2605 Best 5 of 7 cards</div>";
+      activeSection.appendChild(rankDiv);
+    }
+
+    /* Discard instruction */
+    if (cardMode==="discard"&&maxD>0){
+      var di=document.createElement("p"); di.className="discard-instr";
+      di.innerHTML=markedCount===0
+        ?"Tap cards to mark for discard <em>(up to "+maxD+")</em>"
+        :"<strong>"+markedCount+"</strong> marked \u2014 tap DRAW when ready";
+      activeSection.appendChild(di);
+    }
+
+    /* DRAW CARDS button */
+    if (markedCount>0){
+      var drawBtn=document.createElement("button");
+      drawBtn.className="btn btn-primary btn-xl"; drawBtn.style.marginTop="10px";
+      drawBtn.innerHTML="\uD83C\uDFB2 DRAW "+markedCount+" CARD"+(markedCount!==1?"S":"")+" \u2014 they arrive face-down";
+      drawBtn.addEventListener("click",function(){executePrivateDraw(p);});
+      activeSection.appendChild(drawBtn);
+    }
+
+    /* Divider */
+    var hr=document.createElement("hr"); hr.className="player-divider"; hr.style.marginTop="14px";
+    activeSection.appendChild(hr);
+
+    /* HAND TO NEXT button */
+    if (state.players.length>1){
+      var nextIdx=(state.active+1)%state.players.length;
+      var nextName=state.players[nextIdx].name;
+      var nextBtn=document.createElement("button");
+      nextBtn.className="btn btn-primary btn-xl";
+      nextBtn.innerHTML="\u25B6 HAND TO "+nextName.toUpperCase();
+      nextBtn.addEventListener("click",function(){state.active=nextIdx;cardMode="reveal";saveState();renderHand();});
+      activeSection.appendChild(nextBtn);
+    }
+
+    /* END GAME button */
+    var endBtn=document.createElement("button");
+    endBtn.className="btn btn-view-hand"; endBtn.style.marginTop="8px";
+    endBtn.innerHTML="\uD83C\uDFC6 END GAME \u2014 Reveal All & Rank";
+    endBtn.addEventListener("click",endGame);
+    activeSection.appendChild(endBtn);
+
+    /* Back to scanning */
+    var scanBtn=document.createElement("button");
+    scanBtn.className="btn btn-ghost"; scanBtn.style.marginTop="6px";
+    scanBtn.innerHTML="\uD83D\uDCF7 BACK TO SCANNING";
+    scanBtn.addEventListener("click",function(){show("scan");});
+    activeSection.appendChild(scanBtn);
+
+    /* Restart */
+    var n=getRestartInfo().count;
+    var rs=document.createElement("p"); rs.className="hand-restarts"+(n>0?" flag":"");
+    rs.textContent=n===0?"Restarts today: 0":"⚠ Ride restarted "+n+(n===1?" time today":" times today");
+    activeSection.appendChild(rs);
+
+    stage.appendChild(activeSection);
+  }
+
+  /* ---- End Game screen ---- */
+  function renderEndGame(stage){
+    var sorted=state.players.slice().sort(function(a,b){
+      return compareScore(playerScore(b),playerScore(a));
+    });
+
+    /* Winner banner */
+    var banner=document.createElement("div"); banner.className="end-game-banner";
+    var winScore=playerScore(sorted[0]);
+    var winRes=evaluateHand(STATIONS.map(function(s){return sorted[0].hand[s]||null;}).filter(Boolean));
+    banner.innerHTML="\uD83C\uDFC6 "+sorted[0].name+" WINS!<br>"+
+      "<span class='end-game-hand'>"+winRes.name+"</span>";
+    stage.appendChild(banner);
+
+    /* All players ranked */
+    var is7=STATIONS.length===7;
+    sorted.forEach(function(p,idx){
+      var allCards=STATIONS.map(function(s){return p.hand[s]||null;});
+      var filled=allCards.filter(Boolean);
+      var bestResult=null, bestIndices=[];
+      if (is7&&filled.length===7){bestResult=bestFiveOf(filled);bestIndices=bestResult.indices;}
+      var evalCards=(is7&&filled.length===7)?bestResult.hand:filled;
+      var res=evaluateHand(evalCards);
+
+      var section=document.createElement("div"); section.className="hand-player-section";
+      var placeEl=document.createElement("p"); placeEl.className="end-game-place";
+      placeEl.innerHTML=(idx===0?"\uD83C\uDFC6":idx===1?"\uD83E\uDD48":idx===2?"\uD83E\uDD49":"#"+(idx+1))+" "+p.name;
+      section.appendChild(placeEl);
+
+      var cardsDiv=document.createElement("div"); cardsDiv.className="hand-cards";
+      allCards.forEach(function(card,ci){
+        var mc=document.createElement("div");
+        var isInBest=!is7||filled.length<7||bestIndices.indexOf(ci)>=0;
+        if (card){
+          var suit=SUIT_MAP[card.s];
+          mc.className="mini-card"+(suit.red?" red":"")+(p.wasDrawn&&p.wasDrawn[ci]?" was-drawn":"")+(isInBest?"":" dim");
+          mc.innerHTML="<span class='mini-rank'>"+card.r+"</span><span class='mini-suit'>"+suit.glyph+"</span>"+
+            "<span class='mini-station'>"+STATIONS[ci]+"</span>";
+        } else {
+          mc.className="mini-card empty";
+          mc.innerHTML="<span class='mini-rank'>?</span><span class='mini-station'>"+STATIONS[ci]+"</span>";
+        }
+        cardsDiv.appendChild(mc);
+      });
+      section.appendChild(cardsDiv);
+
+      var rankDiv=document.createElement("div"); rankDiv.className="hand-rank";
+      rankDiv.innerHTML="<div class='rank-name'>"+res.name+"</div><div class='rank-desc'>"+res.desc+"</div>";
+      section.appendChild(rankDiv);
+      stage.appendChild(section);
+
+      if (idx<sorted.length-1){var hr=document.createElement("hr");hr.className="player-divider";stage.appendChild(hr);}
+    });
+
+    /* Play Again button */
+    var playAgain=document.createElement("button");
+    playAgain.className="btn btn-primary btn-xl"; playAgain.style.marginTop="16px";
+    playAgain.innerHTML="\uD83D\uDD04 PLAY AGAIN \u2014 Same Players";
+    playAgain.addEventListener("click",function(){
+      var names=state.players.map(function(p){return p.name;});
+      state={
+        players:names.map(function(n){return newPlayer(n);}),
+        active:0, date:todayStr(), gameType:"private",
+        sharedDeck:freshDeck(), gameEnded:false
+      };
+      cardMode="reveal"; saveState(); show("scan");
+    });
+    stage.appendChild(playAgain);
   }
 
   /* ================================================================
-     QR CODE  (includes discard flags when set)
+     QR CODE  (Club Event only)
   ================================================================ */
-  function buildHandPayload(player) {
-    var cards = STATIONS.map(function(sid){
-      var c = player.hand[sid]; return c?(c.r+c.s):"??";
-    });
-    var payload = "PR1|"+player.name+"|"+cards.join(",");
-    /* Add discard flags if rider has marked any cards */
-    var hasDiscards = player.discards &&
-      STATIONS.some(function(sid){ return player.discards[sid]; });
-    if (hasDiscards) {
-      var flags = STATIONS.map(function(sid){
-        return (player.discards&&player.discards[sid])?"1":"0";
-      });
-      payload += "|" + flags.join(",");
+  function buildHandPayload(player){
+    var cards=STATIONS.map(function(sid){var c=player.hand[sid];return c?(c.r+c.s):"??";});
+    var payload="PR1|"+player.name+"|"+cards.join(",");
+    var hasDiscards=player.discards&&STATIONS.some(function(sid){return player.discards[sid];});
+    if (hasDiscards){
+      var flags=STATIONS.map(function(sid){return(player.discards&&player.discards[sid])?"1":"0";});
+      payload+="|"+flags.join(",");
     }
     return payload;
   }
 
-  function renderHandQR(player,container) {
+  function renderHandQR(player,container){
     if (!container) return;
     container.innerHTML="";
     var payload=buildHandPayload(player);
-    if (typeof QRCode!=="undefined") {
-      try{new QRCode(container,{text:payload,width:200,height:200,
-        colorDark:"#1c1c1c",colorLight:"#f6f1e3",correctLevel:QRCode.CorrectLevel.M});return;}catch(e){}
+    if (typeof QRCode!=="undefined"){
+      try{new QRCode(container,{text:payload,width:200,height:200,colorDark:"#1c1c1c",colorLight:"#f6f1e3",correctLevel:QRCode.CorrectLevel.M});return;}catch(e){}
     }
     container.innerHTML="<p class='qr-fallback'>QR library not loaded.<br><strong>"+payload+"</strong></p>";
   }
@@ -572,7 +901,7 @@
   /* ================================================================
      STATION HANDLING
   ================================================================ */
-  function handleStation(rawText) {
+  function handleStation(rawText){
     var sid=parseStation(rawText);
     if (!sid){toast("That QR code is not a station code.");return;}
     if (STATIONS.indexOf(sid)===-1){toast("Unknown station: "+sid);return;}
@@ -585,7 +914,7 @@
     refreshManual();
   }
 
-  function parseStation(text) {
+  function parseStation(text){
     if (!text) return null;
     var m=String(text).trim().match(/S\s*([0-9]+)/i);
     return m?"S"+m[1]:null;
@@ -606,17 +935,17 @@
     return null;
   }
   function pickEngine(){
-    if(getH5Lib())return "html5qrcode";
-    if(typeof window.jsQR==="function")return "jsqr";
-    if("BarcodeDetector"in window)return "barcode";
-    return "none";
+    if(getH5Lib())return"html5qrcode";
+    if(typeof window.jsQR==="function")return"jsqr";
+    if("BarcodeDetector"in window)return"barcode";
+    return"none";
   }
 
   function startScanner(){
     var status=document.getElementById("scan-status");
     refreshManual();
     var done=drawnCount()===STATIONS.length;
-    if (done){
+    if(done){
       var p=curPlayer();
       if(status)status.textContent=(state&&state.players.length>1&&p)
         ?p.name+" has all "+STATIONS.length+" cards! Tap VIEW MY HAND."
@@ -624,10 +953,7 @@
       showCameraOverlay(false);setManualVisible(true);return;
     }
     engine=pickEngine();
-    if (engine==="none"){
-      if(status)status.textContent="Camera not available. Tap your station number below.";
-      showCameraOverlay(false);setManualVisible(true);return;
-    }
+    if(engine==="none"){if(status)status.textContent="Camera not available. Tap your station below.";showCameraOverlay(false);setManualVisible(true);return;}
     showCameraOverlay(true);setManualVisible(false);
     if(status)status.textContent="Tap the button above to open your camera.";
   }
@@ -648,69 +974,42 @@
     var frame=document.querySelector(".scan-frame");
     var reader=document.getElementById("qr-reader");
 
-    function onFail(msg){
-      if(status)status.innerHTML=msg;
-      setManualVisible(true);
-      if(retryBtn)retryBtn.classList.remove("hidden");
-    }
+    function onFail(msg){if(status)status.innerHTML=msg;setManualVisible(true);if(retryBtn)retryBtn.classList.remove("hidden");}
 
-    if (engine==="html5qrcode"){
-      video.classList.add("hidden");
-      if(frame)frame.classList.add("hidden");
-      reader.classList.remove("hidden");
-      setManualVisible(false);
-      if(!done&&status)status.textContent="Starting camera\u2026";
+    if(engine==="html5qrcode"){
+      video.classList.add("hidden");if(frame)frame.classList.add("hidden");reader.classList.remove("hidden");
+      setManualVisible(false);if(!done&&status)status.textContent="Starting camera\u2026";
       var Lib=getH5Lib();
       try{h5=new Lib("qr-reader",{verbose:false});}catch(e){h5=new Lib("qr-reader");}
       h5.start({facingMode:"environment"},
         {fps:10,qrbox:function(w,h){var m=Math.floor(Math.min(w,h)*0.7);return{width:m,height:m};},aspectRatio:1.0},
         function(text){onDetected(text);},function(){}
-      ).then(function(){
-        h5running=true;
-        if(!done&&status)status.textContent="Point camera at the station QR code.";
-      }).catch(function(){
-        onFail("Camera blocked.<br><small>iPhone: Settings \u2192 Safari \u2192 Camera \u2192 Allow \u2014 then tap <strong>Try Camera Again</strong>.</small>");
-        cleanupH5();
-      });
+      ).then(function(){h5running=true;if(!done&&status)status.textContent="Point camera at the station QR code.";})
+       .catch(function(){onFail("Camera blocked.<br><small>iPhone: Settings \u2192 Safari \u2192 Camera \u2192 Allow, then tap Try Again.</small>");cleanupH5();});
       return;
     }
-
-    video.classList.remove("hidden");
-    if(frame)frame.classList.remove("hidden");
-    reader.classList.add("hidden");
-    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-      onFail("Camera not available. Tap your station number below.");return;
-    }
-    setManualVisible(false);
-    if(!done&&status)status.textContent="Starting camera\u2026";
+    video.classList.remove("hidden");if(frame)frame.classList.remove("hidden");reader.classList.add("hidden");
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){onFail("Camera not available. Tap your station below.");return;}
+    setManualVisible(false);if(!done&&status)status.textContent="Starting camera\u2026";
     navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false})
       .then(function(s){stream=s;video.srcObject=s;return video.play();})
       .then(function(){
-        scanning=true;
-        if(!done&&status)status.textContent="Point camera at the station QR code.";
-        if(engine==="barcode"){
-          try{detector=new window.BarcodeDetector({formats:["qr_code"]});}
-          catch(e){detector=new window.BarcodeDetector();}
-        }
+        scanning=true;if(!done&&status)status.textContent="Point camera at the station QR code.";
+        if(engine==="barcode"){try{detector=new window.BarcodeDetector({formats:["qr_code"]});}catch(e){detector=new window.BarcodeDetector();}}
         tick();
-      }).catch(function(){
-        onFail("Camera blocked. Allow access in Settings, then tap <strong>Try Camera Again</strong>.");
-      });
+      }).catch(function(){onFail("Camera blocked. Allow access in Settings, then tap Try Again.");});
   }
 
   function cleanupH5(){if(h5){try{h5.clear();}catch(e){}}h5=null;h5running=false;}
 
   function stopScanner(){
-    scanning=false;
-    if(rafId){cancelAnimationFrame(rafId);rafId=null;}
+    scanning=false;if(rafId){cancelAnimationFrame(rafId);rafId=null;}
     if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}
     try{video.srcObject=null;}catch(e){}
-    if(h5){
-      var inst=h5;
+    if(h5){var inst=h5;
       if(h5running)inst.stop().then(function(){try{inst.clear();}catch(e){}}).catch(function(){try{inst.clear();}catch(e){}});
       else try{inst.clear();}catch(e){}
-      h5=null;h5running=false;
-    }
+      h5=null;h5running=false;}
   }
 
   function tick(){
@@ -718,12 +1017,10 @@
     if(video.readyState===video.HAVE_ENOUGH_DATA){
       if(engine==="jsqr"){
         var w=video.videoWidth,ht=video.videoHeight;
-        if(w&&ht){
-          canvas.width=w;canvas.height=ht;ctx.drawImage(video,0,0,w,ht);
+        if(w&&ht){canvas.width=w;canvas.height=ht;ctx.drawImage(video,0,0,w,ht);
           var img=ctx.getImageData(0,0,w,ht);
           var code=window.jsQR(img.data,w,ht,{inversionAttempts:"dontInvert"});
-          if(code&&code.data){onDetected(code.data);return;}
-        }
+          if(code&&code.data){onDetected(code.data);return;}}
         rafId=requestAnimationFrame(tick);
       }else if(engine==="barcode"){
         detector.detect(video).then(function(codes){
@@ -758,90 +1055,38 @@
   }
 
   function refreshManual(){
-    if(!state)return;
-    var p=curPlayer(),grid=document.getElementById("manual-stations");
+    if(!state)return;var p=curPlayer();var grid=document.getElementById("manual-stations");
     if(!grid||!p)return;
-    Array.prototype.forEach.call(grid.children,function(b){
-      b.classList.toggle("done",!!(p.hand[b.dataset.sid]));
-    });
+    Array.prototype.forEach.call(grid.children,function(b){b.classList.toggle("done",!!(p.hand[b.dataset.sid]));});
   }
 
-  function setManualVisible(vis){
-    var block=document.querySelector(".manual-block");
-    if(block)block.classList.toggle("hidden",!vis);
-  }
+  function setManualVisible(vis){var block=document.querySelector(".manual-block");if(block)block.classList.toggle("hidden",!vis);}
 
   /* ================================================================
      DYNAMIC START FORM
   ================================================================ */
   var nameInputCount=1;
-
-  function buildStartForm(){
-    nameInputCount=1;
-    var c=document.getElementById("name-inputs-container");
-    if(!c)return;c.innerHTML="";addNameRow(c,1);updateAddHandBtn();
-  }
-
+  function buildStartForm(){nameInputCount=1;var c=document.getElementById("name-inputs-container");if(!c)return;c.innerHTML="";addNameRow(c,1);updateAddHandBtn();}
   function addNameRow(container,num){
     var row=document.createElement("div");row.className="name-row";
-    var label=document.createElement("label");label.className="name-row-label";
-    label.textContent=num===1?"Your name":"Hand "+num+" name";
+    var label=document.createElement("label");label.className="name-row-label";label.textContent=num===1?"Your name":"Hand "+num+" name";
     var wrap=document.createElement("div");wrap.className="name-row-wrap";
-    var input=document.createElement("input");
-    input.type="text";input.inputMode="text";input.maxLength=24;
+    var input=document.createElement("input");input.type="text";input.inputMode="text";input.maxLength=24;
     input.className="name-row-input";input.placeholder=num===1?"e.g. Joe":"e.g. Sam";
-    if(num===1)input.required=true;
-    wrap.appendChild(input);
-    if(num>1){
-      var rm=document.createElement("button");
-      rm.type="button";rm.className="remove-name-btn";rm.textContent="\u2715";
-      rm.addEventListener("click",function(){row.remove();renumberRows();updateAddHandBtn();});
-      wrap.appendChild(rm);
-    }
+    if(num===1)input.required=true;wrap.appendChild(input);
+    if(num>1){var rm=document.createElement("button");rm.type="button";rm.className="remove-name-btn";rm.textContent="\u2715";
+      rm.addEventListener("click",function(){row.remove();renumberRows();updateAddHandBtn();});wrap.appendChild(rm);}
     row.appendChild(label);row.appendChild(wrap);container.appendChild(row);
   }
-
-  function renumberRows(){
-    var rows=document.querySelectorAll(".name-row");
-    rows.forEach(function(row,i){
-      var num=i+1;
-      var lbl=row.querySelector(".name-row-label");
-      if(lbl)lbl.textContent=num===1?"Your name":"Hand "+num+" name";
-      var inp=row.querySelector(".name-row-input");
-      if(inp){
-        inp.placeholder=num===1?"e.g. Joe":"e.g. Sam";
-        if(num===1)inp.required=true;else inp.removeAttribute("required");
-      }
-    });
-    nameInputCount=rows.length;
-  }
-
-  function updateAddHandBtn(){
-    var btn=document.getElementById("add-hand-btn");
-    if(!btn)return;
-    var atMax=document.querySelectorAll(".name-row").length>=MAX_HANDS;
-    btn.disabled=atMax;btn.classList.toggle("hidden",atMax);
-  }
-
-  function getStartFormNames(){
-    var names=[];
-    document.querySelectorAll(".name-row-input").forEach(function(inp){
-      var v=inp.value.trim();if(v)names.push(v);
-    });
-    return names;
-  }
+  function renumberRows(){var rows=document.querySelectorAll(".name-row");rows.forEach(function(row,i){var num=i+1;var lbl=row.querySelector(".name-row-label");if(lbl)lbl.textContent=num===1?"Your name":"Hand "+num+" name";var inp=row.querySelector(".name-row-input");if(inp){inp.placeholder=num===1?"e.g. Joe":"e.g. Sam";if(num===1)inp.required=true;else inp.removeAttribute("required");}});nameInputCount=rows.length;}
+  function updateAddHandBtn(){var btn=document.getElementById("add-hand-btn");if(!btn)return;var atMax=document.querySelectorAll(".name-row").length>=MAX_HANDS;btn.disabled=atMax;btn.classList.toggle("hidden",atMax);}
+  function getStartFormNames(){var names=[];document.querySelectorAll(".name-row-input").forEach(function(inp){var v=inp.value.trim();if(v)names.push(v);});return names;}
 
   /* ================================================================
      TOAST
   ================================================================ */
   var toastTimer=null;
-  function toast(msg){
-    var t=document.getElementById("toast");
-    if(!t)return;
-    t.textContent=msg;t.classList.remove("hidden");
-    clearTimeout(toastTimer);
-    toastTimer=setTimeout(function(){t.classList.add("hidden");},3200);
-  }
+  function toast(msg){var t=document.getElementById("toast");if(!t)return;t.textContent=msg;t.classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.add("hidden");},3200);}
 
   /* ================================================================
      INIT & WIRING
@@ -853,85 +1098,78 @@
     buildStartForm();
     updateStartScreen();
 
-    /* Gear icon opens settings */
+    /* Gear icon */
     var gearBtn=document.getElementById("gear-btn");
     if(gearBtn)gearBtn.addEventListener("click",function(){show("settings");});
 
-    /* Settings: game mode toggle */
+    /* Settings: game type */
+    var gc=document.getElementById("game-club"),gp=document.getElementById("game-private");
+    if(gc)gc.addEventListener("click",function(){settings.gameType="club";gc.classList.add("active");if(gp)gp.classList.remove("active");});
+    if(gp)gp.addEventListener("click",function(){settings.gameType="private";gp.classList.add("active");if(gc)gc.classList.remove("active");});
+
+    /* Settings: stations */
     var m5=document.getElementById("mode-5"),m7=document.getElementById("mode-7");
-    if(m5)m5.addEventListener("click",function(){
-      settings.stations=5;m5.classList.add("active");if(m7)m7.classList.remove("active");
-    });
-    if(m7)m7.addEventListener("click",function(){
-      settings.stations=7;m7.classList.add("active");if(m5)m5.classList.remove("active");
-    });
+    if(m5)m5.addEventListener("click",function(){settings.stations=5;m5.classList.add("active");if(m7)m7.classList.remove("active");});
+    if(m7)m7.addEventListener("click",function(){settings.stations=7;m7.classList.add("active");if(m5)m5.classList.remove("active");});
 
     /* Save settings */
     var saveSetBtn=document.getElementById("save-settings-btn");
     if(saveSetBtn)saveSetBtn.addEventListener("click",saveSettingsFromForm);
 
-    /* Add hand button */
+    /* Add hand */
     var addBtn=document.getElementById("add-hand-btn");
     if(addBtn)addBtn.addEventListener("click",function(){
-      var c=document.getElementById("name-inputs-container");
-      if(!c)return;
+      var c=document.getElementById("name-inputs-container");if(!c)return;
       if(c.querySelectorAll(".name-row").length>=MAX_HANDS)return;
       nameInputCount=c.querySelectorAll(".name-row").length+1;
       addNameRow(c,nameInputCount);updateAddHandBtn();
-      var inputs=c.querySelectorAll(".name-row-input");
-      if(inputs.length)inputs[inputs.length-1].focus();
+      var inputs=c.querySelectorAll(".name-row-input");if(inputs.length)inputs[inputs.length-1].focus();
     });
 
-    /* Resume button */
+    /* Resume */
     var resumeBtn=document.getElementById("resume-btn");
-    if(resumeBtn)resumeBtn.addEventListener("click",function(){
-      var saved=loadState();if(saved){state=saved;show("scan");}
-    });
+    if(resumeBtn)resumeBtn.addEventListener("click",function(){var saved=loadState();if(saved){state=saved;show("scan");}});
 
-    /* Start form — warn if cards already in progress */
+    /* Start form — warn if ride in progress */
     var startForm=document.getElementById("start-form");
     if(startForm)startForm.addEventListener("submit",function(e){
       e.preventDefault();
       var saved=loadState();
-      if(saved&&saved.players){
-        var drawn=saved.players.reduce(function(acc,p){return acc+drawnCountFor(p);},0);
-        if(drawn>0&&!confirm("You have "+drawn+" card(s) in progress.\n\nStarting a new ride will erase them.\n\nContinue?"))return;
-      }
+      if(saved&&saved.players){var drawn=saved.players.reduce(function(acc,p){return acc+drawnCountFor(p);},0);
+        if(drawn>0&&!confirm("You have "+drawn+" card(s) in progress.\n\nStarting new ride will erase them. Continue?"))return;}
       var names=getStartFormNames();
       if(!names.length||!names[0]){toast("Please enter at least one rider name.");return;}
-      state={players:names.map(function(n){return newPlayer(n);}),active:0,date:todayStr()};
+      var isPrivate=settings.gameType==="private";
+      state={
+        players:names.map(function(n){return newPlayer(n);}),
+        active:0, date:todayStr(), gameType:settings.gameType,
+        sharedDeck:isPrivate?freshDeck():null, gameEnded:false
+      };
+      cardMode="reveal";
       saveState();show("scan");
     });
 
-    /* Restart button */
+    /* Restart (club event) */
     var restartBtn=document.getElementById("restart-btn");
     if(restartBtn)restartBtn.addEventListener("click",function(){
-      if(!confirm("Restart the ride?\n\nThis will clear all cards."))return;
+      if(!confirm("Restart the ride? This clears all cards."))return;
       var info=bumpRestart();
       var names=state&&state.players?state.players.map(function(p){return p.name;}):["Rider"];
-      state=null;show("start");
-      buildStartForm();
+      state=null;show("start");buildStartForm();
       var c=document.getElementById("name-inputs-container");
-      if(c){
-        var fi=c.querySelector(".name-row-input");
-        if(fi&&names[0])fi.value=names[0];
-        for(var i=1;i<names.length;i++){
-          addNameRow(c,i+1);
-          var all=c.querySelectorAll(".name-row-input");
-          if(all[i])all[i].value=names[i];
-        }
-        updateAddHandBtn();
-      }
+      if(c){var fi=c.querySelector(".name-row-input");if(fi&&names[0])fi.value=names[0];
+        for(var i=1;i<names.length;i++){addNameRow(c,i+1);var all=c.querySelectorAll(".name-row-input");if(all[i])all[i].value=names[i];}
+        updateAddHandBtn();}
       toast("Ride reset (restart #"+info.count+" today).");
     });
 
-    /* Camera overlay buttons */
+    /* Camera buttons */
     var camBtn=document.getElementById("camera-start-btn");
     var retryBtn=document.getElementById("camera-retry-btn");
-    if(camBtn)  camBtn.addEventListener("click",  function(){startCameraFeed();});
+    if(camBtn)camBtn.addEventListener("click",function(){startCameraFeed();});
     if(retryBtn)retryBtn.addEventListener("click",function(){startCameraFeed();});
 
-    /* All data-nav buttons */
+    /* Nav buttons */
     document.querySelectorAll("[data-nav]").forEach(function(el){
       el.addEventListener("click",function(){
         var dest=el.getAttribute("data-nav");
@@ -940,7 +1178,7 @@
       });
     });
 
-    /* Pause camera when phone screen turns off */
+    /* Visibility change — pause camera */
     document.addEventListener("visibilitychange",function(){
       if(document.hidden&&current==="scan")stopScanner();
       else if(!document.hidden&&current==="scan")startScanner();
@@ -949,7 +1187,6 @@
 
   document.addEventListener("DOMContentLoaded",init);
 
-  /* Service worker registration */
   if("serviceWorker"in navigator){
     window.addEventListener("load",function(){
       navigator.serviceWorker.register("service-worker.js").catch(function(){});

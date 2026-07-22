@@ -1,5 +1,5 @@
 /* Poker Ride service worker — offline-first (cache first) — v9 */
-var CACHE = "poker-ride-v12";
+var CACHE = "poker-ride-v13";
 
 var CORE = [
   "./",
